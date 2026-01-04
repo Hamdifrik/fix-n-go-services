@@ -55,7 +55,7 @@ const HeroSection = () => {
 
           {/* Sous-titre */}
           <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto animate-slide-up" style={{ animationDelay: '0.2s' }}>
-            Plomberie, électricité, serrurerie... Connectez-vous avec des Helpers qualifiés près de chez vous, 
+            Plomberie, électricité,mécanicien, serrurerie... Connectez-vous avec des Helpers qualifiés près de chez vous, 
             disponibles 7j/7 avec paiement sécurisé.
           </p>
 
