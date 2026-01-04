@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
   Wrench, 
@@ -21,6 +21,15 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SERVICE_LABELS, STATUS_LABELS, MissionStatus, ServiceType } from '@/types';
+
+// Interface pour l'utilisateur
+interface User {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: 'client' | 'helper';
+}
 
 // Données de démonstration
 const mockMissions = [
@@ -55,14 +64,50 @@ const mockMissions = [
 ];
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('missions');
+  const [user, setUser] = useState<User | null>(null);
+
+  // Récupérer les informations de l'utilisateur au chargement
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const userData = JSON.parse(userStr);
+        setUser(userData);
+      } catch (error) {
+        console.error('Erreur lors de la récupération des données utilisateur:', error);
+        // Si erreur, rediriger vers login
+        navigate('/login');
+      }
+    } else {
+      // Si pas d'utilisateur, rediriger vers login
+      navigate('/login');
+    }
+  }, [navigate]);
+
+  // Fonction de déconnexion
+  const handleLogout = () => {
+    // Supprimer le token et les données utilisateur
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // Rediriger vers la page de connexion
+    navigate('/login');
+  };
+
+  // Obtenir les initiales de l'utilisateur
+  const getUserInitials = () => {
+    if (!user) return '??';
+    return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
+  };
 
   const sidebarItems = [
-    { id: 'home', icon: Home, label: 'Accueil' },
-    { id: 'missions', icon: FileText, label: 'Mes missions' },
-    { id: 'messages', icon: MessageSquare, label: 'Messages', badge: 3 },
-    { id: 'wallet', icon: Wallet, label: 'Portefeuille' },
-    { id: 'settings', icon: Settings, label: 'Paramètres' },
+    { id: 'home', icon: Home, label: 'Accueil', path: null },
+    { id: 'missions', icon: FileText, label: 'Mes missions', path: null },
+    { id: 'messages', icon: MessageSquare, label: 'Messages', badge: 3, path: null },
+    { id: 'profile', icon: User, label: 'Profil', path: '/profile' },
+    { id: 'settings', icon: Settings, label: 'Paramètres', path: null },
   ];
 
   const stats = [
@@ -85,6 +130,15 @@ const Dashboard = () => {
     }
   };
 
+  // Afficher un loader si l'utilisateur n'est pas encore chargé
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
@@ -105,7 +159,13 @@ const Dashboard = () => {
             {sidebarItems.map((item) => (
               <li key={item.id}>
                 <button
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => {
+                    if (item.path) {
+                      navigate(item.path);
+                    } else {
+                      setActiveTab(item.id);
+                    }
+                  }}
                   className={cn(
                     "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all",
                     activeTab === item.id
@@ -130,13 +190,17 @@ const Dashboard = () => {
         <div className="p-4 border-t border-border">
           <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold">
-              JD
+              {getUserInitials()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-medium truncate">Jean Dupont</p>
-              <p className="text-sm text-muted-foreground truncate">Client</p>
+              <p className="font-medium truncate">{user.firstName} {user.lastName}</p>
+              <p className="text-sm text-muted-foreground truncate capitalize">{user.role}</p>
             </div>
-            <button className="text-muted-foreground hover:text-foreground">
+            <button 
+              onClick={handleLogout}
+              className="text-muted-foreground hover:text-destructive transition-colors"
+              title="Se déconnecter"
+            >
               <LogOut className="w-5 h-5" />
             </button>
           </div>
@@ -149,7 +213,7 @@ const Dashboard = () => {
         <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6">
           <div>
             <h1 className="text-xl font-semibold">Tableau de bord</h1>
-            <p className="text-sm text-muted-foreground">Bienvenue, Jean !</p>
+            <p className="text-sm text-muted-foreground">Bienvenue, {user.firstName} !</p>
           </div>
           <div className="flex items-center gap-3">
             <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
@@ -254,7 +318,13 @@ const Dashboard = () => {
         {sidebarItems.slice(0, 5).map((item) => (
           <button
             key={item.id}
-            onClick={() => setActiveTab(item.id)}
+            onClick={() => {
+              if (item.path) {
+                navigate(item.path);
+              } else {
+                setActiveTab(item.id);
+              }
+            }}
             className={cn(
               "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors",
               activeTab === item.id

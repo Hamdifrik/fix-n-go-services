@@ -1,90 +1,135 @@
-import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  Wrench, 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff,
-  ArrowRight,
-  User,
-  Phone,
-  Users,
-  Briefcase,
-  Check
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { UserRole } from '@/types';
+"use client"
+
+import type React from "react"
+
+import { useState } from "react"
+import { Link, useNavigate, useSearchParams } from "react-router-dom"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
+import { useToast } from "@/hooks/use-toast"
+import { Wrench, Mail, Lock, Eye, EyeOff, ArrowRight, User, Phone, Users, Briefcase, Check } from "lucide-react"
+import { cn } from "@/lib/utils"
+import type { UserRole } from "@/types"
 
 const Register = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [searchParams] = useSearchParams();
-  const initialRole = searchParams.get('role') as UserRole || 'client';
+  const navigate = useNavigate()
+  const { toast } = useToast()
+  const [searchParams] = useSearchParams()
+  const initialRole = (searchParams.get("role") as UserRole) || "client"
 
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [step, setStep] = useState(1);
+  const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
     role: initialRole,
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    password: '',
-    confirmPassword: '',
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
     acceptTerms: false,
-  });
+  })
 
   const roles = [
     {
-      value: 'client' as UserRole,
+      value: "client" as UserRole,
       icon: Users,
-      title: 'Client',
-      description: 'Je cherche un professionnel pour mes travaux',
+      title: "Client",
+      description: "Je cherche un professionnel pour mes travaux",
     },
     {
-      value: 'helper' as UserRole,
+      value: "helper" as UserRole,
       icon: Briefcase,
-      title: 'Helper',
-      description: 'Je suis professionnel et propose mes services',
+      title: "Helper",
+      description: "Je suis professionnel et propose mes services",
     },
-  ];
+  ]
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+    e.preventDefault()
+
+    // Validation étape 1
     if (step === 1) {
-      setStep(2);
-      return;
+      setStep(2)
+      return
     }
 
+    // Validation mot de passe
     if (formData.password !== formData.confirmPassword) {
       toast({
         title: "Erreur",
-        description: "Les mots de passe ne correspondent pas.",
+        description: "Les mots de passe ne correspondent pas",
         variant: "destructive",
-      });
-      return;
+      })
+      return
     }
 
-    setIsLoading(true);
+    setIsLoading(true)
 
-    // Simulation d'inscription
-    setTimeout(() => {
-      setIsLoading(false);
+    console.log("[v0] Tentative d'inscription avec:", formData.email, "Role:", formData.role)
+    console.log("[v0] API URL:", import.meta.env.VITE_API_URL)
+
+    try {
+      const apiUrl = `${import.meta.env.VITE_API_URL}/auth/register`
+      console.log("[v0] URL complète:", apiUrl)
+
+      const requestBody = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        role: formData.role,
+        ...(formData.role === "helper" && { expertise: [], hourlyRate: 0 }),
+      }
+      console.log("[v0] Body de la requête:", requestBody)
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      })
+
+      console.log("[v0] Réponse status:", response.status)
+      const data = await response.json()
+      console.log("[v0] Données reçues:", data)
+
+      if (data.success) {
+        localStorage.setItem("token", data.data.token)
+        localStorage.setItem("user", JSON.stringify(data.data.user))
+
+        toast({
+          title: "Inscription réussie",
+          description: `Bienvenue ${data.data.user.firstName}!`,
+        })
+
+        console.log("[v0] Redirection vers:", data.data.user.role === "helper" ? "/helper/dashboard" : "/dashboard")
+        if (data.data.user.role === "helper") {
+          window.location.href = "/helper/dashboard"
+        } else {
+          window.location.href = "/dashboard"
+        }
+      } else {
+        toast({
+          title: "Erreur d'inscription",
+          description: data.message || "Une erreur est survenue",
+          variant: "destructive",
+        })
+      }
+    } catch (err) {
+      console.error("[v0] Erreur:", err)
       toast({
-        title: "Compte créé avec succès !",
-        description: "Bienvenue sur FixIt. Vérifiez votre email pour activer votre compte.",
-      });
-      navigate('/login');
-    }, 1500);
-  };
+        title: "Erreur",
+        description: "Erreur de connexion au serveur",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen flex">
@@ -104,24 +149,18 @@ const Register = () => {
             {[1, 2].map((s) => (
               <div
                 key={s}
-                className={cn(
-                  "flex-1 h-1 rounded-full transition-colors",
-                  s <= step ? "bg-primary" : "bg-muted"
-                )}
+                className={cn("flex-1 h-1 rounded-full transition-colors", s <= step ? "bg-primary" : "bg-muted")}
               />
             ))}
           </div>
 
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">
-              {step === 1 ? 'Créer votre compte' : 'Vos informations'}
-            </h1>
+            <h1 className="text-3xl font-bold mb-2">{step === 1 ? "Créer votre compte" : "Vos informations"}</h1>
             <p className="text-muted-foreground">
-              {step === 1 
-                ? 'Choisissez votre type de compte pour commencer.'
-                : 'Remplissez vos informations pour finaliser votre inscription.'
-              }
+              {step === 1
+                ? "Choisissez votre type de compte pour commencer."
+                : "Remplissez vos informations pour finaliser votre inscription."}
             </p>
           </div>
 
@@ -140,15 +179,17 @@ const Register = () => {
                         "w-full p-4 rounded-xl border-2 text-left transition-all flex items-center gap-4",
                         formData.role === role.value
                           ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/50"
+                          : "border-border hover:border-primary/50",
                       )}
                     >
-                      <div className={cn(
-                        "w-12 h-12 rounded-xl flex items-center justify-center",
-                        formData.role === role.value
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground"
-                      )}>
+                      <div
+                        className={cn(
+                          "w-12 h-12 rounded-xl flex items-center justify-center",
+                          formData.role === role.value
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground",
+                        )}
+                      >
                         <role.icon className="w-6 h-6" />
                       </div>
                       <div className="flex-1">
@@ -240,7 +281,7 @@ const Register = () => {
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <Input
                       id="password"
-                      type={showPassword ? 'text' : 'password'}
+                      type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
                       value={formData.password}
                       onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -279,17 +320,15 @@ const Register = () => {
                   <Checkbox
                     id="terms"
                     checked={formData.acceptTerms}
-                    onCheckedChange={(checked) => 
-                      setFormData({ ...formData, acceptTerms: checked as boolean })
-                    }
+                    onCheckedChange={(checked) => setFormData({ ...formData, acceptTerms: checked as boolean })}
                     required
                   />
                   <Label htmlFor="terms" className="text-sm font-normal cursor-pointer leading-tight">
-                    J'accepte les{' '}
+                    J'accepte les{" "}
                     <Link to="/terms" className="text-primary hover:underline">
                       conditions d'utilisation
-                    </Link>{' '}
-                    et la{' '}
+                    </Link>{" "}
+                    et la{" "}
                     <Link to="/privacy" className="text-primary hover:underline">
                       politique de confidentialité
                     </Link>
@@ -298,18 +337,13 @@ const Register = () => {
 
                 {/* Buttons */}
                 <div className="flex gap-3">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="lg"
-                    onClick={() => setStep(1)}
-                  >
+                  <Button type="button" variant="outline" size="lg" onClick={() => setStep(1)}>
                     Retour
                   </Button>
-                  <Button 
-                    type="submit" 
-                    variant="hero" 
-                    size="lg" 
+                  <Button
+                    type="submit"
+                    variant="hero"
+                    size="lg"
                     className="flex-1"
                     disabled={isLoading || !formData.acceptTerms}
                   >
@@ -329,7 +363,7 @@ const Register = () => {
 
           {/* Login Link */}
           <p className="mt-8 text-center text-muted-foreground">
-            Déjà un compte ?{' '}
+            Déjà un compte ?{" "}
             <Link to="/login" className="text-primary font-medium hover:underline">
               Se connecter
             </Link>
@@ -341,40 +375,27 @@ const Register = () => {
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-secondary to-primary items-center justify-center p-12">
         <div className="max-w-lg text-center text-white">
           <div className="w-24 h-24 mx-auto mb-8 rounded-3xl bg-white/10 backdrop-blur flex items-center justify-center">
-            {formData.role === 'helper' ? (
-              <Briefcase className="w-12 h-12" />
-            ) : (
-              <Users className="w-12 h-12" />
-            )}
+            {formData.role === "helper" ? <Briefcase className="w-12 h-12" /> : <Users className="w-12 h-12" />}
           </div>
           <h2 className="text-3xl font-bold mb-4">
-            {formData.role === 'helper' 
-              ? 'Développez votre activité'
-              : 'Trouvez le bon professionnel'
-            }
+            {formData.role === "helper" ? "Développez votre activité" : "Trouvez le bon professionnel"}
           </h2>
           <p className="text-white/80 text-lg">
-            {formData.role === 'helper'
-              ? 'Rejoignez des milliers de professionnels qui utilisent FixIt pour trouver de nouveaux clients.'
-              : 'Accédez à un réseau de professionnels qualifiés et vérifiés pour tous vos travaux.'
-            }
+            {formData.role === "helper"
+              ? "Rejoignez des milliers de professionnels qui utilisent FixIt pour trouver de nouveaux clients."
+              : "Accédez à un réseau de professionnels qualifiés et vérifiés pour tous vos travaux."}
           </p>
 
           {/* Benefits */}
           <div className="mt-12 space-y-4 text-left">
-            {(formData.role === 'helper' 
+            {(formData.role === "helper"
               ? [
-                  'Paiements rapides et sécurisés',
-                  'Gérez votre planning librement',
-                  'Développez votre réputation',
-                  'Pas de frais d\'inscription',
+                  "Paiements rapides et sécurisés",
+                  "Gérez votre planning librement",
+                  "Développez votre réputation",
+                  "Pas de frais d'inscription",
                 ]
-              : [
-                  'Devis gratuits et sans engagement',
-                  'Professionnels vérifiés',
-                  'Paiement sécurisé',
-                  'Assistance 7j/7',
-                ]
+              : ["Devis gratuits et sans engagement", "Professionnels vérifiés", "Paiement sécurisé", "Assistance 7j/7"]
             ).map((benefit, index) => (
               <div key={index} className="flex items-center gap-3">
                 <div className="w-6 h-6 rounded-full bg-white/20 flex items-center justify-center">
@@ -387,7 +408,7 @@ const Register = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Register;
+export default Register

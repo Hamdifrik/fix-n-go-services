@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
   Wrench, 
@@ -21,125 +21,42 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Interface pour le profil client
-interface ClientProfile {
-  _id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  role: string;
-  avatar: string | null;
-  expertise: string[];
-  availability: boolean;
-  rating: number;
-  totalReviews: number;
-  bookingHistory: any[];
-  isVerified: boolean;
-  isActive: boolean;
-  certifications: any[];
-  createdAt: string;
-  updatedAt: string;
-}
+// Données de démonstration pour le profil client
+const mockClientProfile = {
+  id: '1',
+  firstName: 'Jean',
+  lastName: 'Dupont',
+  email: 'jean.dupont@email.com',
+  phone: '06 12 34 56 78',
+  avatar: null,
+  address: {
+    street: '15 Rue de la Paix',
+    city: 'Paris',
+    postalCode: '75002',
+    country: 'France',
+  },
+  createdAt: new Date('2023-06-15'),
+  isVerified: true,
+  kycStatus: 'approved' as const,
+  stats: {
+    totalMissions: 12,
+    completedMissions: 10,
+    totalSpent: 1850,
+    averageRating: 4.8,
+  },
+};
 
 const profileSections = [
   { id: 'personal', icon: User, label: 'Informations personnelles' },
+  { id: 'address', icon: MapPin, label: 'Adresse' },
   { id: 'security', icon: Shield, label: 'Sécurité & Vérification' },
   { id: 'payment', icon: CreditCard, label: 'Moyens de paiement' },
   { id: 'notifications', icon: Bell, label: 'Notifications' },
 ];
 
 const ClientProfile = () => {
-  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('personal');
-  const [profile, setProfile] = useState<ClientProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Récupérer le profil depuis l'API
-  useEffect(() => {
-    const fetchProfile = async () => {
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        navigate('/login');
-        return;
-      }
-
-      try {
-        const API_URL = import.meta.env.VITE_API_URL;
-        const response = await fetch(`${API_URL}/auth/profile`, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('Erreur lors de la récupération du profil');
-        }
-
-        const data = await response.json();
-        
-        if (data.success) {
-          // Vérifier que c'est bien un client
-          if (data.data.role !== 'client') {
-            navigate('/helper/dashboard');
-            return;
-          }
-          setProfile(data.data);
-        } else {
-          throw new Error(data.message || 'Erreur lors de la récupération du profil');
-        }
-      } catch (err) {
-        console.error('Erreur:', err);
-        setError(err instanceof Error ? err.message : 'Une erreur est survenue');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProfile();
-  }, [navigate]);
-
-  // Obtenir les initiales de l'utilisateur
-  const getUserInitials = () => {
-    if (!profile) return '??';
-    return `${profile.firstName.charAt(0)}${profile.lastName.charAt(0)}`.toUpperCase();
-  };
-
-  // Afficher un loader pendant le chargement
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Chargement du profil...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Afficher une erreur si le profil n'a pas pu être chargé
-  if (error || !profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center max-w-md">
-          <p className="text-destructive mb-4">{error || 'Impossible de charger le profil'}</p>
-          <Button onClick={() => navigate('/dashboard')}>
-            Retour au dashboard
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Calculer la date de création formatée
-  const memberSince = new Date(profile.createdAt).toLocaleDateString('fr-FR', { 
-    month: 'long', 
-    year: 'numeric' 
-  });
+  const profile = mockClientProfile;
 
   return (
     <div className="min-h-screen bg-background">
@@ -164,7 +81,7 @@ const ClientProfile = () => {
             <div className="bg-card rounded-2xl border border-border p-6 text-center">
               <div className="relative inline-block mb-4">
                 <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-3xl font-bold text-primary-foreground">
-                  {getUserInitials()}
+                  {profile.firstName[0]}{profile.lastName[0]}
                 </div>
                 <button className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors">
                   <Camera className="w-4 h-4" />
@@ -173,23 +90,17 @@ const ClientProfile = () => {
               <h2 className="text-lg font-semibold">{profile.firstName} {profile.lastName}</h2>
               <p className="text-sm text-muted-foreground">Client</p>
               
-              <div className="flex items-center justify-center gap-2 mt-3 flex-wrap">
+              <div className="flex items-center justify-center gap-2 mt-3">
                 {profile.isVerified && (
                   <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-secondary/10 text-secondary text-xs font-medium">
                     <CheckCircle2 className="w-3 h-3" />
                     Vérifié
                   </span>
                 )}
-                {profile.isActive && (
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-success/10 text-success text-xs font-medium">
-                    <CheckCircle2 className="w-3 h-3" />
-                    Actif
-                  </span>
-                )}
               </div>
 
               <p className="text-xs text-muted-foreground mt-4">
-                Membre depuis {memberSince}
+                Membre depuis {profile.createdAt.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}
               </p>
             </div>
 
@@ -199,17 +110,21 @@ const ClientProfile = () => {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Missions totales</span>
-                  <span className="font-semibold">{profile.bookingHistory.length}</span>
+                  <span className="font-semibold">{profile.stats.totalMissions}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Avis reçus</span>
-                  <span className="font-semibold">{profile.totalReviews}</span>
+                  <span className="text-muted-foreground">Missions terminées</span>
+                  <span className="font-semibold text-secondary">{profile.stats.completedMissions}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Note moyenne</span>
+                  <span className="text-muted-foreground">Total dépensé</span>
+                  <span className="font-semibold">{profile.stats.totalSpent}€</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Note moyenne donnée</span>
                   <div className="flex items-center gap-1">
                     <Star className="w-4 h-4 text-warning fill-warning" />
-                    <span className="font-semibold">{profile.rating.toFixed(1)}</span>
+                    <span className="font-semibold">{profile.stats.averageRating}</span>
                   </div>
                 </div>
               </div>
@@ -272,24 +187,36 @@ const ClientProfile = () => {
                     <p className="font-medium">{profile.phone}</p>
                   </div>
                 </div>
+              </div>
+            )}
 
-                {/* Account Info */}
-                <div className="mt-8 pt-6 border-t border-border">
-                  <h4 className="font-semibold mb-4">Informations du compte</h4>
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
-                      <Calendar className="w-5 h-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Création du compte</p>
-                        <p className="font-medium">{new Date(profile.createdAt).toLocaleDateString('fr-FR')}</p>
-                      </div>
+            {activeSection === 'address' && (
+              <div className="bg-card rounded-2xl border border-border p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-semibold">Adresse</h3>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <Edit2 className="w-4 h-4" />
+                    Modifier
+                  </Button>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="space-y-1">
+                    <label className="text-sm text-muted-foreground">Rue</label>
+                    <p className="font-medium">{profile.address.street}</p>
+                  </div>
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-sm text-muted-foreground">Code postal</label>
+                      <p className="font-medium">{profile.address.postalCode}</p>
                     </div>
-                    <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
-                      <FileText className="w-5 h-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Missions effectuées</p>
-                        <p className="font-medium">{profile.bookingHistory.length}</p>
-                      </div>
+                    <div className="space-y-1">
+                      <label className="text-sm text-muted-foreground">Ville</label>
+                      <p className="font-medium">{profile.address.city}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-sm text-muted-foreground">Pays</label>
+                      <p className="font-medium">{profile.address.country}</p>
                     </div>
                   </div>
                 </div>
@@ -303,29 +230,24 @@ const ClientProfile = () => {
                   
                   <div className={cn(
                     "p-4 rounded-xl flex items-center gap-4",
-                    profile.isVerified ? "bg-secondary/10" : "bg-warning/10"
+                    profile.kycStatus === 'approved' ? "bg-secondary/10" : "bg-warning/10"
                   )}>
                     <div className={cn(
                       "w-12 h-12 rounded-full flex items-center justify-center",
-                      profile.isVerified ? "bg-secondary text-secondary-foreground" : "bg-warning text-warning-foreground"
+                      profile.kycStatus === 'approved' ? "bg-secondary text-secondary-foreground" : "bg-warning text-warning-foreground"
                     )}>
                       <Shield className="w-6 h-6" />
                     </div>
                     <div className="flex-1">
                       <p className="font-medium">
-                        {profile.isVerified ? 'Identité vérifiée' : 'Vérification en attente'}
+                        {profile.kycStatus === 'approved' ? 'Identité vérifiée' : 'Vérification en cours'}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {profile.isVerified 
+                        {profile.kycStatus === 'approved' 
                           ? 'Votre identité a été vérifiée avec succès'
-                          : 'Complétez votre vérification pour débloquer toutes les fonctionnalités'}
+                          : 'Nous vérifions actuellement vos documents'}
                       </p>
                     </div>
-                    {!profile.isVerified && (
-                      <Button variant="outline" size="sm">
-                        Compléter
-                      </Button>
-                    )}
                   </div>
                 </div>
 
@@ -336,7 +258,7 @@ const ClientProfile = () => {
                     <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
                       <div>
                         <p className="font-medium">Mot de passe</p>
-                        <p className="text-sm text-muted-foreground">Modifier votre mot de passe</p>
+                        <p className="text-sm text-muted-foreground">Dernière modification il y a 3 mois</p>
                       </div>
                       <Button variant="outline" size="sm">Modifier</Button>
                     </div>
@@ -344,9 +266,9 @@ const ClientProfile = () => {
                     <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
                       <div>
                         <p className="font-medium">Authentification à deux facteurs</p>
-                        <p className="text-sm text-muted-foreground">Sécurisez votre compte</p>
+                        <p className="text-sm text-muted-foreground">Non activée</p>
                       </div>
-                      <Button variant="outline" size="sm">Configurer</Button>
+                      <Button variant="outline" size="sm">Activer</Button>
                     </div>
                   </div>
                 </div>
@@ -363,12 +285,15 @@ const ClientProfile = () => {
                   </Button>
                 </div>
                 
-                <div className="text-center py-12">
-                  <CreditCard className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-4">Aucun moyen de paiement enregistré</p>
-                  <Button variant="outline">
-                    Ajouter une carte bancaire
-                  </Button>
+                <div className="p-4 border border-border rounded-xl flex items-center gap-4">
+                  <div className="w-12 h-8 bg-gradient-to-r from-primary to-info rounded flex items-center justify-center text-primary-foreground text-xs font-bold">
+                    VISA
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium">•••• •••• •••• 4242</p>
+                    <p className="text-sm text-muted-foreground">Expire 12/25</p>
+                  </div>
+                  <span className="text-xs bg-secondary/10 text-secondary px-2 py-1 rounded-full">Par défaut</span>
                 </div>
               </div>
             )}

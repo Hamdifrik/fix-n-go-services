@@ -71,3 +71,12 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+
+
+******************************
+
+ClientProfile (/profile) : Profil client avec infos personnelles, adresse, sécurité KYC, paiements, notifications
+HelperProfile (/helper/profile) : Profil Helper avec section avis clients, services, tarifs, portefeuille, statistiques
+HelperDashboard (/helper/dashboard) : Dashboard Helper avec section missions disponibles publiées par les clients, filtres par service/urgence
+MissionDetail (/mission/:id) : Détail mission avec toggle vue Client/Helper

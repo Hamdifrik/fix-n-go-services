@@ -1,45 +1,87 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  Wrench, 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff,
-  ArrowRight,
-  Chrome
-} from 'lucide-react';
+"use client"
+
+import type React from "react"
+
+import { useState } from "react"
+import { Link } from "react-router-dom"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
+import { useToast } from "@/hooks/use-toast"
+import { Wrench, Mail, Lock, Eye, EyeOff, ArrowRight, Chrome } from "lucide-react"
 
 const Login = () => {
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const navigate = window.location // Use window.location for Next.js
+  const { toast } = useToast()
+  const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
     rememberMe: false,
-  });
+  })
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+    e.preventDefault()
+    setIsLoading(true)
 
-    // Simulation de connexion
-    setTimeout(() => {
-      setIsLoading(false);
+   const API_URL = import.meta.env.VITE_API_URL 
+
+    console.log("[v0] Tentative de connexion avec:", formData.email)
+    console.log("[v0] API URL:", API_URL)
+
+    try {
+      const apiUrl = `${API_URL}/auth/login`
+      console.log("[v0] URL complète:", apiUrl)
+
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      })
+
+      console.log("[v0] Réponse status:", response.status)
+      const data = await response.json()
+      console.log("[v0] Données reçues:", data)
+
+      if (data.success) {
+        // Sauvegarder dans localStorage
+        localStorage.setItem("token", data.data.token)
+        localStorage.setItem("user", JSON.stringify(data.data.user))
+
+        toast({
+          title: "Connexion réussie",
+          description: `Bienvenue ${data.data.user.firstName}!`,
+        })
+
+        console.log("[v0] Redirection vers:", data.data.user.role === "helper" ? "/helper/dashboard" : "/dashboard")
+        if (data.data.user.role === "helper") {
+          window.location.href = "/helper/dashboard"
+        } else {
+          window.location.href = "/dashboard"
+        }
+      } else {
+        toast({
+          title: "Erreur de connexion",
+          description: data.message || "Email ou mot de passe incorrect",
+          variant: "destructive",
+        })
+      }
+    } catch (err) {
+      console.error("[v0] Erreur:", err)
       toast({
-        title: "Connexion réussie",
-        description: "Bienvenue sur FixIt !",
-      });
-      navigate('/dashboard');
-    }, 1500);
-  };
+        title: "Erreur",
+        description: "Erreur de connexion au serveur",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen flex">
@@ -57,9 +99,7 @@ const Login = () => {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2">Bon retour !</h1>
-            <p className="text-muted-foreground">
-              Connectez-vous pour accéder à votre espace.
-            </p>
+            <p className="text-muted-foreground">Connectez-vous pour accéder à votre espace.</p>
           </div>
 
           {/* Form */}
@@ -93,7 +133,7 @@ const Login = () => {
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <Input
                   id="password"
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -115,9 +155,7 @@ const Login = () => {
               <Checkbox
                 id="remember"
                 checked={formData.rememberMe}
-                onCheckedChange={(checked) => 
-                  setFormData({ ...formData, rememberMe: checked as boolean })
-                }
+                onCheckedChange={(checked) => setFormData({ ...formData, rememberMe: checked as boolean })}
               />
               <Label htmlFor="remember" className="text-sm font-normal cursor-pointer">
                 Se souvenir de moi
@@ -125,13 +163,7 @@ const Login = () => {
             </div>
 
             {/* Submit Button */}
-            <Button 
-              type="submit" 
-              variant="hero" 
-              size="lg" 
-              className="w-full"
-              disabled={isLoading}
-            >
+            <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
@@ -149,21 +181,19 @@ const Login = () => {
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-background text-muted-foreground">
-                ou continuer avec
-              </span>
+              <span className="px-4 bg-background text-muted-foreground">ou continuer avec</span>
             </div>
           </div>
 
           {/* Social Login */}
-          <Button variant="outline" size="lg" className="w-full gap-2">
+          <Button variant="outline" size="lg" className="w-full gap-2 bg-transparent">
             <Chrome className="w-5 h-5" />
             Google
           </Button>
 
           {/* Register Link */}
           <p className="mt-8 text-center text-muted-foreground">
-            Pas encore de compte ?{' '}
+            Pas encore de compte ?{" "}
             <Link to="/register" className="text-primary font-medium hover:underline">
               Créer un compte
             </Link>
@@ -177,12 +207,9 @@ const Login = () => {
           <div className="w-24 h-24 mx-auto mb-8 rounded-3xl bg-white/10 backdrop-blur flex items-center justify-center">
             <Wrench className="w-12 h-12" />
           </div>
-          <h2 className="text-3xl font-bold mb-4">
-            Votre dépannage à portée de clic
-          </h2>
+          <h2 className="text-3xl font-bold mb-4">Votre dépannage à portée de clic</h2>
           <p className="text-white/80 text-lg">
-            Accédez à des milliers de professionnels qualifiés, 
-            avec un paiement 100% sécurisé.
+            Accédez à des milliers de professionnels qualifiés, avec un paiement 100% sécurisé.
           </p>
 
           {/* Stats */}
@@ -203,7 +230,7 @@ const Login = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Login;
+export default Login
