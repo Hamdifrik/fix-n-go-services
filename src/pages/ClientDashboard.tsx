@@ -18,8 +18,9 @@ import {
   Search
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { mockServices } from '@/data/mockServices';
-import { Booking, BOOKING_STATUS_LABELS, CATEGORY_LABELS } from '@/types/service';
+import { useBookings } from '@/hooks/useBookings';
+import { useServices } from '@/hooks/useServices';
+import { Skeleton } from '@/components/ui/skeleton';
 import ServiceCard from '@/components/services/ServiceCard';
 
 interface UserData {
@@ -30,60 +31,75 @@ interface UserData {
   role: 'client' | 'helper';
 }
 
-// Réservations du client (simulation)
-const clientBookings: (Booking & { helperName: string })[] = [
-  {
-    id: 'cb1',
-    serviceId: '1',
-    service: mockServices[0],
-    clientId: 'c1',
-    helperId: 'h1',
-    status: 'accepted',
-    scheduledDate: new Date('2024-01-20'),
-    scheduledTime: '14:00',
-    address: {
-      street: '123 rue de la République',
-      city: 'Paris',
-      postalCode: '75015',
-    },
-    totalPrice: 50,
-    paymentStatus: 'held',
-    createdAt: new Date('2024-01-15'),
-    helperName: 'Marc D.',
-  },
-  {
-    id: 'cb2',
-    serviceId: '2',
-    service: mockServices[1],
-    clientId: 'c1',
-    helperId: 'h2',
-    status: 'completed',
-    scheduledDate: new Date('2024-01-10'),
-    scheduledTime: '10:00',
-    address: {
-      street: '123 rue de la République',
-      city: 'Paris',
-      postalCode: '75015',
-    },
-    totalPrice: 60,
-    paymentStatus: 'released',
-    createdAt: new Date('2024-01-08'),
-    completedAt: new Date('2024-01-10'),
-    helperName: 'Sophie M.',
-  },
-];
+const CATEGORY_LABELS: Record<string, string> = {
+  plumbing: 'Plomberie',
+  electrical: 'Électricité',
+  plomberie: 'Plomberie',
+  electricite: 'Électricité',
+  serrurerie: 'Serrurerie',
+  chauffage: 'Chauffage',
+  climatisation: 'Climatisation',
+  menuiserie: 'Menuiserie',
+  peinture: 'Peinture',
+  menage: 'Ménage',
+  jardinage: 'Jardinage',
+  mecanique: 'Mécanique',
+  vitrerie: 'Vitrerie',
+  autre: 'Autre',
+  other: 'Autre',
+};
+
+const BOOKING_STATUS_LABELS: Record<string, string> = {
+  pending: 'En attente',
+  confirmed: 'Confirmé',
+  'in-progress': 'En cours',
+  completed: 'Terminé',
+  cancelled: 'Annulé',
+};
 
 const ClientDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('home');
   const [user, setUser] = useState<UserData | null>(null);
 
+  // API Calls
+  const { data: bookingsResponse, isLoading: isLoadingBookings } = useBookings();
+  const { data: servicesResponse, isLoading: isLoadingServices } = useServices({ limit: 4 });
+
+  const bookings = bookingsResponse?.data || [];
+  const recommendedServices = (servicesResponse?.data || []).map((service: any) => ({
+    id: service._id,
+    title: service.title,
+    description: service.description,
+    category: service.category,
+    price: service.price,
+    pricingType: 'fixed' as const,
+    duration: service.duration,
+    rating: service.helper?.rating || 4.5,
+    reviewCount: service.helper?.totalReviews || 0,
+    images: service.images?.length > 0 ? service.images : ['/placeholder.svg'],
+    tags: service.tags || [],
+    helperId: typeof service.helper === 'string' ? service.helper : service.helper?._id,
+    helper: {
+      id: typeof service.helper === 'string' ? service.helper : service.helper?._id || '',
+      firstName: service.helper?.firstName || 'Helper',
+      lastName: service.helper?.lastName || '',
+      rating: service.helper?.rating || 4.5,
+      reviewCount: service.helper?.totalReviews || 0,
+      completedJobs: 0,
+      location: 'France',
+      isVerified: service.helper?.isVerified || false,
+      responseTime: 30,
+    },
+    isActive: service.isActive,
+    createdAt: new Date(service.createdAt),
+  }));
+
   useEffect(() => {
     const userStr = localStorage.getItem('user');
     if (userStr) {
       try {
         const userData = JSON.parse(userStr);
-        // Rediriger vers helper dashboard si c'est un helper
         if (userData.role === 'helper') {
           navigate('/helper/dashboard');
           return;
@@ -111,8 +127,8 @@ const ClientDashboard = () => {
 
   const sidebarItems = [
     { id: 'home', icon: Home, label: 'Accueil' },
-    { id: 'bookings', icon: CalendarIcon, label: 'Mes réservations', badge: clientBookings.length },
-    { id: 'messages', icon: MessageSquare, label: 'Messages', badge: 1 },
+    { id: 'bookings', icon: CalendarIcon, label: 'Mes réservations', badge: bookings.length },
+    { id: 'messages', icon: MessageSquare, label: 'Messages', badge: 0 },
     { id: 'profile', icon: User, label: 'Profil', path: '/profile' },
     { id: 'settings', icon: Settings, label: 'Paramètres' },
   ];
@@ -120,16 +136,13 @@ const ClientDashboard = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-warning/10 text-warning';
-      case 'accepted': return 'bg-info/10 text-info';
-      case 'in_progress': return 'bg-primary/10 text-primary';
+      case 'confirmed': return 'bg-info/10 text-info';
+      case 'in-progress': return 'bg-primary/10 text-primary';
       case 'completed': return 'bg-secondary/10 text-secondary';
       case 'cancelled': return 'bg-destructive/10 text-destructive';
       default: return 'bg-muted text-muted-foreground';
     }
   };
-
-  // Services recommandés
-  const recommendedServices = mockServices.slice(0, 4);
 
   if (!user) {
     return (
@@ -143,7 +156,6 @@ const ClientDashboard = () => {
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
       <aside className="hidden lg:flex flex-col w-64 border-r border-border bg-card">
-        {/* Logo */}
         <div className="p-6 border-b border-border">
           <Link to="/" className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
@@ -153,7 +165,6 @@ const ClientDashboard = () => {
           </Link>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 p-4">
           <ul className="space-y-1">
             {sidebarItems.map((item) => (
@@ -175,7 +186,7 @@ const ClientDashboard = () => {
                 >
                   <item.icon className="w-5 h-5" />
                   <span className="flex-1">{item.label}</span>
-                  {item.badge && (
+                  {item.badge !== undefined && item.badge > 0 && (
                     <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
                       {item.badge}
                     </span>
@@ -186,7 +197,6 @@ const ClientDashboard = () => {
           </ul>
         </nav>
 
-        {/* User Profile */}
         <div className="p-4 border-t border-border">
           <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold">
@@ -209,7 +219,6 @@ const ClientDashboard = () => {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
-        {/* Top Bar */}
         <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6">
           <div>
             <h1 className="text-xl font-semibold">Mon espace</h1>
@@ -218,7 +227,6 @@ const ClientDashboard = () => {
           <div className="flex items-center gap-3">
             <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
               <Bell className="w-5 h-5 text-muted-foreground" />
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-destructive" />
             </button>
             <Link to="/services">
               <Button variant="hero" size="sm" className="gap-2">
@@ -229,29 +237,28 @@ const ClientDashboard = () => {
           </div>
         </header>
 
-        {/* Content */}
         <div className="flex-1 overflow-auto p-6">
-          {/* Quick Actions */}
           {activeTab === 'home' && (
             <>
+              {/* Quick Actions */}
               <div className="mb-8">
                 <h2 className="text-lg font-semibold mb-4">Que cherchez-vous ?</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {['Plomberie', 'Électricité', 'Ménage', 'Serrurerie'].map((cat) => (
+                  {['plomberie', 'electricite', 'menage', 'serrurerie'].map((cat) => (
                     <Link 
                       key={cat}
-                      to={`/services?category=${cat.toLowerCase()}`}
+                      to={`/services?category=${cat}`}
                       className="p-4 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all text-center"
                     >
                       <Package className="w-8 h-8 mx-auto mb-2 text-primary" />
-                      <span className="font-medium">{cat}</span>
+                      <span className="font-medium">{CATEGORY_LABELS[cat]}</span>
                     </Link>
                   ))}
                 </div>
               </div>
 
               {/* My Bookings Preview */}
-              {clientBookings.length > 0 && (
+              {bookings.length > 0 && (
                 <div className="bg-card rounded-2xl border border-border mb-8">
                   <div className="p-5 border-b border-border flex items-center justify-between">
                     <h2 className="text-lg font-semibold">Mes réservations</h2>
@@ -264,47 +271,62 @@ const ClientDashboard = () => {
                     </button>
                   </div>
                   
-                  <div className="divide-y divide-border">
-                    {clientBookings.slice(0, 2).map((booking) => (
-                      <div 
-                        key={booking.id}
-                        className="p-5 hover:bg-muted/30 transition-colors"
-                      >
-                        <div className="flex items-start gap-4">
-                          <img
-                            src={booking.service.images[0] || '/placeholder.svg'}
-                            alt={booking.service.title}
-                            className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className={cn(
-                                "px-2 py-0.5 rounded-full text-xs font-medium",
-                                getStatusColor(booking.status)
-                              )}>
-                                {BOOKING_STATUS_LABELS[booking.status]}
-                              </span>
-                            </div>
-                            <h3 className="font-semibold truncate">{booking.service.title}</h3>
-                            <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <CalendarIcon className="w-4 h-4" />
-                                {booking.scheduledDate.toLocaleDateString('fr-FR')}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-4 h-4" />
-                                {booking.scheduledTime}
-                              </span>
+                  {isLoadingBookings ? (
+                    <div className="p-5 space-y-4">
+                      {[...Array(2)].map((_, i) => (
+                        <Skeleton key={i} className="h-20" />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-border">
+                      {bookings.slice(0, 2).map((booking: any) => {
+                        const service = typeof booking.service === 'string' ? null : booking.service;
+                        const helper = typeof booking.helper === 'string' ? null : booking.helper;
+                        
+                        return (
+                          <div 
+                            key={booking._id}
+                            className="p-5 hover:bg-muted/30 transition-colors"
+                          >
+                            <div className="flex items-start gap-4">
+                              <img
+                                src={service?.images?.[0] || '/placeholder.svg'}
+                                alt={service?.title || 'Service'}
+                                className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className={cn(
+                                    "px-2 py-0.5 rounded-full text-xs font-medium",
+                                    getStatusColor(booking.status)
+                                  )}>
+                                    {BOOKING_STATUS_LABELS[booking.status] || booking.status}
+                                  </span>
+                                </div>
+                                <h3 className="font-semibold truncate">{service?.title || 'Service'}</h3>
+                                <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+                                  <span className="flex items-center gap-1">
+                                    <CalendarIcon className="w-4 h-4" />
+                                    {new Date(booking.scheduledDate).toLocaleDateString('fr-FR')}
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="w-4 h-4" />
+                                    {new Date(booking.scheduledDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-bold text-secondary">{booking.totalPrice}€</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {helper ? `${helper.firstName} ${helper.lastName?.charAt(0)}.` : 'Helper'}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-bold text-secondary">{booking.totalPrice}€</p>
-                            <p className="text-sm text-muted-foreground">{booking.helperName}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -317,15 +339,23 @@ const ClientDashboard = () => {
                     <ChevronRight className="w-4 h-4" />
                   </Link>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {recommendedServices.map((service) => (
-                    <ServiceCard 
-                      key={service.id} 
-                      service={service}
-                      onBook={() => navigate(`/book/${service.id}`)}
-                    />
-                  ))}
-                </div>
+                {isLoadingServices ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[...Array(4)].map((_, i) => (
+                      <Skeleton key={i} className="h-64 rounded-2xl" />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {recommendedServices.map((service: any) => (
+                      <ServiceCard 
+                        key={service.id} 
+                        service={service}
+                        onBook={() => navigate(`/book/${service.id}`)}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -337,68 +367,79 @@ const ClientDashboard = () => {
                 <h2 className="text-lg font-semibold">Toutes mes réservations</h2>
               </div>
               
-              {clientBookings.length > 0 ? (
+              {isLoadingBookings ? (
+                <div className="p-5 space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} className="h-24" />
+                  ))}
+                </div>
+              ) : bookings.length > 0 ? (
                 <div className="divide-y divide-border">
-                  {clientBookings.map((booking) => (
-                    <div 
-                      key={booking.id}
-                      className="p-5 hover:bg-muted/30 transition-colors"
-                    >
-                      <div className="flex items-start gap-4">
-                        <img
-                          src={booking.service.images[0] || '/placeholder.svg'}
-                          alt={booking.service.title}
-                          className="w-20 h-20 rounded-xl object-cover flex-shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className={cn(
-                              "px-2 py-0.5 rounded-full text-xs font-medium",
-                              getStatusColor(booking.status)
-                            )}>
-                              {BOOKING_STATUS_LABELS[booking.status]}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              {CATEGORY_LABELS[booking.service.category]}
-                            </span>
+                  {bookings.map((booking: any) => {
+                    const service = typeof booking.service === 'string' ? null : booking.service;
+                    const helper = typeof booking.helper === 'string' ? null : booking.helper;
+                    
+                    return (
+                      <div 
+                        key={booking._id}
+                        className="p-5 hover:bg-muted/30 transition-colors"
+                      >
+                        <div className="flex items-start gap-4">
+                          <img
+                            src={service?.images?.[0] || '/placeholder.svg'}
+                            alt={service?.title || 'Service'}
+                            className="w-20 h-20 rounded-xl object-cover flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className={cn(
+                                "px-2 py-0.5 rounded-full text-xs font-medium",
+                                getStatusColor(booking.status)
+                              )}>
+                                {BOOKING_STATUS_LABELS[booking.status] || booking.status}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                {CATEGORY_LABELS[service?.category] || service?.category || 'Service'}
+                              </span>
+                            </div>
+                            <h3 className="font-semibold">{service?.title || 'Service'}</h3>
+                            <p className="text-sm text-muted-foreground">
+                              Prestataire: {helper ? `${helper.firstName} ${helper.lastName}` : 'Helper'}
+                            </p>
+                            <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <CalendarIcon className="w-4 h-4" />
+                                {new Date(booking.scheduledDate).toLocaleDateString('fr-FR')}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="w-4 h-4" />
+                                {new Date(booking.scheduledDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-4 h-4" />
+                                {booking.address?.city || 'France'}
+                              </span>
+                            </div>
                           </div>
-                          <h3 className="font-semibold">{booking.service.title}</h3>
-                          <p className="text-sm text-muted-foreground">
-                            Prestataire: {booking.helperName}
-                          </p>
-                          <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <CalendarIcon className="w-4 h-4" />
-                              {booking.scheduledDate.toLocaleDateString('fr-FR')}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Clock className="w-4 h-4" />
-                              {booking.scheduledTime}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <MapPin className="w-4 h-4" />
-                              {booking.address.city}
-                            </span>
+                          <div className="text-right">
+                            <p className="text-lg font-bold text-secondary">{booking.totalPrice}€</p>
+                            {booking.status === 'completed' && (
+                              <Button variant="outline" size="sm" className="mt-2">
+                                <Star className="w-4 h-4 mr-1" />
+                                Noter
+                              </Button>
+                            )}
+                            {booking.status === 'confirmed' && (
+                              <Button variant="outline" size="sm" className="mt-2">
+                                <MessageSquare className="w-4 h-4 mr-1" />
+                                Contacter
+                              </Button>
+                            )}
                           </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-secondary">{booking.totalPrice}€</p>
-                          {booking.status === 'completed' && (
-                            <Button variant="outline" size="sm" className="mt-2">
-                              <Star className="w-4 h-4 mr-1" />
-                              Noter
-                            </Button>
-                          )}
-                          {booking.status === 'accepted' && (
-                            <Button variant="outline" size="sm" className="mt-2">
-                              <MessageSquare className="w-4 h-4 mr-1" />
-                              Contacter
-                            </Button>
-                          )}
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="p-12 text-center">

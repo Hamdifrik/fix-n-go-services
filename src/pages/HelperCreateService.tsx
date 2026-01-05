@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
   ChevronLeft, 
   Package, 
@@ -14,16 +14,31 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/layout/Navbar';
-import { ServiceCategory, CATEGORY_LABELS, PricingType } from '@/types/service';
+import { useCreateService } from '@/hooks/useServices';
 import { cn } from '@/lib/utils';
+
+const CATEGORY_LABELS: Record<string, string> = {
+  plomberie: 'Plomberie',
+  electricite: 'Électricité',
+  serrurerie: 'Serrurerie',
+  chauffage: 'Chauffage',
+  climatisation: 'Climatisation',
+  menuiserie: 'Menuiserie',
+  peinture: 'Peinture',
+  menage: 'Ménage',
+  jardinage: 'Jardinage',
+  mecanique: 'Mécanique',
+  vitrerie: 'Vitrerie',
+  autre: 'Autre',
+};
+
+type ServiceCategory = keyof typeof CATEGORY_LABELS;
 
 interface ServiceFormData {
   title: string;
   description: string;
   category: ServiceCategory | '';
-  pricingType: PricingType;
   price: number;
   duration: number;
   tags: string[];
@@ -32,23 +47,21 @@ interface ServiceFormData {
 
 const HelperCreateService = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [step, setStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
   const [newTag, setNewTag] = useState('');
   const [formData, setFormData] = useState<ServiceFormData>({
     title: '',
     description: '',
     category: '',
-    pricingType: 'fixed',
     price: 0,
     duration: 60,
     tags: [],
     images: [],
   });
 
+  const createService = useCreateService();
+
   useEffect(() => {
-    // Vérifier si l'utilisateur est un helper
     const userStr = localStorage.getItem('user');
     if (!userStr) {
       navigate('/login');
@@ -91,18 +104,17 @@ const HelperCreateService = () => {
   const isStep2Valid = formData.price > 0 && formData.duration > 0;
 
   const handleSubmit = async () => {
-    setIsLoading(true);
-    
-    // Simuler l'envoi
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    toast({
-      title: "Service publié !",
-      description: "Votre service est maintenant visible dans le catalogue.",
+    await createService.mutateAsync({
+      title: formData.title,
+      description: formData.description,
+      category: formData.category,
+      price: formData.price,
+      duration: formData.duration,
+      images: formData.images,
+      tags: formData.tags,
     });
 
     navigate('/helper/dashboard');
-    setIsLoading(false);
   };
 
   const steps = [
@@ -173,7 +185,6 @@ const HelperCreateService = () => {
                 </h2>
 
                 <div className="space-y-6">
-                  {/* Category */}
                   <div>
                     <Label className="mb-3 block">Catégorie *</Label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
@@ -194,7 +205,6 @@ const HelperCreateService = () => {
                     </div>
                   </div>
 
-                  {/* Title */}
                   <div>
                     <Label htmlFor="title">Titre du service *</Label>
                     <Input
@@ -209,12 +219,11 @@ const HelperCreateService = () => {
                     </p>
                   </div>
 
-                  {/* Description */}
                   <div>
                     <Label htmlFor="description">Description détaillée *</Label>
                     <Textarea
                       id="description"
-                      placeholder="Décrivez en détail ce que vous proposez, votre expérience, les équipements inclus..."
+                      placeholder="Décrivez en détail ce que vous proposez..."
                       value={formData.description}
                       onChange={(e) => handleInputChange('description', e.target.value)}
                       rows={5}
@@ -247,46 +256,8 @@ const HelperCreateService = () => {
                 </h2>
 
                 <div className="space-y-6">
-                  {/* Pricing Type */}
                   <div>
-                    <Label className="mb-3 block">Type de tarification *</Label>
-                    <div className="grid grid-cols-2 gap-4">
-                      <button
-                        onClick={() => handleInputChange('pricingType', 'fixed')}
-                        className={cn(
-                          "p-4 rounded-xl border text-left transition-all",
-                          formData.pricingType === 'fixed'
-                            ? "bg-primary/10 border-primary"
-                            : "border-border hover:border-primary"
-                        )}
-                      >
-                        <p className="font-semibold">Prix forfaitaire</p>
-                        <p className="text-sm text-muted-foreground">
-                          Un prix fixe pour la prestation
-                        </p>
-                      </button>
-                      <button
-                        onClick={() => handleInputChange('pricingType', 'hourly')}
-                        className={cn(
-                          "p-4 rounded-xl border text-left transition-all",
-                          formData.pricingType === 'hourly'
-                            ? "bg-primary/10 border-primary"
-                            : "border-border hover:border-primary"
-                        )}
-                      >
-                        <p className="font-semibold">Tarif horaire</p>
-                        <p className="text-sm text-muted-foreground">
-                          Facturation à l'heure
-                        </p>
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Price */}
-                  <div>
-                    <Label htmlFor="price">
-                      Prix {formData.pricingType === 'hourly' ? '(€/heure)' : '(€)'} *
-                    </Label>
+                    <Label htmlFor="price">Prix (€) *</Label>
                     <div className="relative">
                       <Euro className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <Input
@@ -301,9 +272,8 @@ const HelperCreateService = () => {
                     </div>
                   </div>
 
-                  {/* Duration */}
                   <div>
-                    <Label htmlFor="duration">Durée estimée (minutes) *</Label>
+                    <Label className="mb-3 block">Durée estimée (minutes) *</Label>
                     <div className="grid grid-cols-4 gap-2">
                       {[30, 60, 90, 120, 180, 240].map((dur) => (
                         <button
@@ -347,7 +317,6 @@ const HelperCreateService = () => {
                 </h2>
 
                 <div className="space-y-6">
-                  {/* Photos */}
                   <div>
                     <Label className="mb-3 block">Photos du service (optionnel)</Label>
                     <div className="grid grid-cols-3 gap-4">
@@ -368,7 +337,6 @@ const HelperCreateService = () => {
                     </p>
                   </div>
 
-                  {/* Tags */}
                   <div>
                     <Label className="mb-3 block">Mots-clés (max. 5)</Label>
                     <div className="flex gap-2 mb-2">
@@ -424,7 +392,6 @@ const HelperCreateService = () => {
                   Aperçu de votre service
                 </h2>
 
-                {/* Preview Card */}
                 <div className="border border-border rounded-xl overflow-hidden mb-6">
                   <div className="aspect-video bg-muted flex items-center justify-center">
                     <ImageIcon className="w-12 h-12 text-muted-foreground" />
@@ -435,7 +402,7 @@ const HelperCreateService = () => {
                         {formData.category && CATEGORY_LABELS[formData.category]}
                       </span>
                       <span className="text-secondary font-bold">
-                        {formData.price}€{formData.pricingType === 'hourly' ? '/h' : ''}
+                        {formData.price}€
                       </span>
                     </div>
                     <h3 className="font-semibold mb-2">{formData.title || 'Titre du service'}</h3>
@@ -454,29 +421,21 @@ const HelperCreateService = () => {
                   </div>
                 </div>
 
-                {/* Summary */}
                 <div className="bg-muted/50 rounded-xl p-4 mb-6">
-                  <h3 className="font-medium mb-3">Récapitulatif</h3>
-                  <div className="space-y-2 text-sm">
+                  <h3 className="font-medium mb-2">Récapitulatif</h3>
+                  <div className="space-y-1 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Catégorie</span>
-                      <span className="font-medium">
-                        {formData.category && CATEGORY_LABELS[formData.category]}
-                      </span>
+                      <span className="font-medium">{formData.category && CATEGORY_LABELS[formData.category]}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Tarification</span>
-                      <span className="font-medium">
-                        {formData.price}€{formData.pricingType === 'hourly' ? '/h' : ' (forfait)'}
-                      </span>
+                      <span className="text-muted-foreground">Prix</span>
+                      <span className="font-medium">{formData.price}€</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Durée estimée</span>
+                      <span className="text-muted-foreground">Durée</span>
                       <span className="font-medium">
-                        {formData.duration < 60 
-                          ? `${formData.duration} min` 
-                          : `${formData.duration/60}h`
-                        }
+                        {formData.duration < 60 ? `${formData.duration} min` : `${formData.duration/60}h`}
                       </span>
                     </div>
                   </div>
@@ -489,12 +448,12 @@ const HelperCreateService = () => {
                   <Button 
                     variant="hero" 
                     onClick={handleSubmit}
-                    disabled={isLoading}
+                    disabled={createService.isPending}
                   >
-                    {isLoading ? (
+                    {createService.isPending ? (
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     ) : (
-                      <>Publier mon service</>
+                      'Publier le service'
                     )}
                   </Button>
                 </div>
