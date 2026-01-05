@@ -13,12 +13,30 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
-import { mockServices } from '@/data/mockServices';
-import { CATEGORY_LABELS } from '@/types/service';
+import { useService } from '@/hooks/useServices';
+import { useCreateBooking } from '@/hooks/useBookings';
 import { cn } from '@/lib/utils';
+
+const CATEGORY_LABELS: Record<string, string> = {
+  plumbing: 'Plomberie',
+  electrical: 'Électricité',
+  plomberie: 'Plomberie',
+  electricite: 'Électricité',
+  serrurerie: 'Serrurerie',
+  chauffage: 'Chauffage',
+  climatisation: 'Climatisation',
+  menuiserie: 'Menuiserie',
+  peinture: 'Peinture',
+  menage: 'Ménage',
+  jardinage: 'Jardinage',
+  mecanique: 'Mécanique',
+  vitrerie: 'Vitrerie',
+  autre: 'Autre',
+  other: 'Autre',
+};
 
 interface BookingFormData {
   date: string;
@@ -33,9 +51,7 @@ interface BookingFormData {
 const BookService = () => {
   const { serviceId } = useParams();
   const navigate = useNavigate();
-  const { toast } = useToast();
   const [step, setStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<BookingFormData>({
     date: '',
     time: '',
@@ -46,15 +62,37 @@ const BookService = () => {
     notes: '',
   });
 
-  const service = mockServices.find(s => s.id === serviceId);
+  const { data: serviceResponse, isLoading: isLoadingService } = useService(serviceId || '');
+  const service = serviceResponse?.data;
+  
+  const createBooking = useCreateBooking();
 
   useEffect(() => {
-    // Vérifier si l'utilisateur est connecté
     const user = localStorage.getItem('user');
     if (!user) {
       navigate('/login');
     }
   }, [navigate]);
+
+  if (isLoadingService) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <main className="pt-20 container mx-auto px-4 py-8">
+          <Skeleton className="h-8 w-64 mb-8" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <Skeleton className="h-96 rounded-2xl" />
+            </div>
+            <div>
+              <Skeleton className="h-64 rounded-2xl" />
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   if (!service) {
     return (
@@ -71,10 +109,9 @@ const BookService = () => {
     );
   }
 
+  const helper = typeof service.helper === 'string' ? null : service.helper;
+
   const formatPrice = () => {
-    if (service.pricingType === 'hourly') {
-      return `${service.price}€/h`;
-    }
     return `${service.price}€`;
   };
 
@@ -86,27 +123,28 @@ const BookService = () => {
   const isStep2Valid = formData.street && formData.city && formData.postalCode;
 
   const handleSubmit = async () => {
-    setIsLoading(true);
+    const scheduledDate = new Date(`${formData.date}T${formData.time}:00`);
     
-    // Simuler l'envoi de la réservation
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    toast({
-      title: "Réservation confirmée !",
-      description: "Vous recevrez une confirmation par email.",
+    await createBooking.mutateAsync({
+      serviceId: service._id,
+      scheduledDate: scheduledDate.toISOString(),
+      address: {
+        street: formData.street,
+        city: formData.city,
+        zipCode: formData.postalCode,
+        country: 'France',
+      },
+      notes: formData.notes || undefined,
     });
 
     navigate('/dashboard');
-    setIsLoading(false);
   };
 
-  // Générer les créneaux horaires disponibles
   const timeSlots = [
     '08:00', '09:00', '10:00', '11:00', 
     '14:00', '15:00', '16:00', '17:00', '18:00'
   ];
 
-  // Générer les dates disponibles (prochains 14 jours)
   const availableDates = Array.from({ length: 14 }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() + i + 1);
@@ -124,7 +162,6 @@ const BookService = () => {
       <Navbar />
       
       <main className="pt-20">
-        {/* Breadcrumb */}
         <div className="bg-muted/30 py-4">
           <div className="container mx-auto px-4">
             <button 
@@ -179,7 +216,6 @@ const BookService = () => {
                     Choisissez une date et un horaire
                   </h2>
 
-                  {/* Date Selection */}
                   <div className="mb-6">
                     <Label className="mb-3 block">Date souhaitée</Label>
                     <div className="grid grid-cols-3 md:grid-cols-7 gap-2">
@@ -206,7 +242,6 @@ const BookService = () => {
                     </div>
                   </div>
 
-                  {/* Time Selection */}
                   <div>
                     <Label className="mb-3 block">Créneau horaire</Label>
                     <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
@@ -325,7 +360,6 @@ const BookService = () => {
                     Récapitulatif & Paiement
                   </h2>
 
-                  {/* Booking Summary */}
                   <div className="bg-muted/50 rounded-xl p-4 mb-6">
                     <h3 className="font-medium mb-3">Détails de la réservation</h3>
                     <div className="space-y-2 text-sm">
@@ -352,27 +386,20 @@ const BookService = () => {
                     </div>
                   </div>
 
-                  {/* Payment Info */}
                   <div className="border border-border rounded-xl p-4 mb-6">
                     <div className="flex items-center gap-2 mb-3">
                       <Shield className="w-5 h-5 text-secondary" />
                       <span className="font-medium">Paiement sécurisé</span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Votre paiement sera mis en séquestre jusqu'à la validation du service. 
-                      Vous ne serez débité qu'après confirmation de la bonne réalisation de la prestation.
+                      Votre paiement sera mis en séquestre jusqu'à la validation du service.
                     </p>
                   </div>
 
-                  {/* Terms */}
                   <p className="text-xs text-muted-foreground mb-6">
                     En cliquant sur "Confirmer la réservation", vous acceptez nos{' '}
                     <Link to="/terms" className="text-primary hover:underline">
                       conditions générales de service
-                    </Link>{' '}
-                    et notre{' '}
-                    <Link to="/privacy" className="text-primary hover:underline">
-                      politique de confidentialité
                     </Link>.
                   </p>
 
@@ -383,9 +410,9 @@ const BookService = () => {
                     <Button 
                       variant="hero" 
                       onClick={handleSubmit}
-                      disabled={isLoading}
+                      disabled={createBooking.isPending}
                     >
-                      {isLoading ? (
+                      {createBooking.isPending ? (
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       ) : (
                         <>Confirmer la réservation - {formatPrice()}</>
@@ -401,13 +428,13 @@ const BookService = () => {
               <div className="sticky top-24 bg-card rounded-2xl border border-border p-5">
                 <div className="flex gap-4 mb-4">
                   <img
-                    src={service.images[0] || '/placeholder.svg'}
+                    src={service.images?.[0] || '/placeholder.svg'}
                     alt={service.title}
                     className="w-20 h-20 rounded-xl object-cover"
                   />
                   <div className="flex-1 min-w-0">
                     <span className="text-xs text-primary font-medium">
-                      {CATEGORY_LABELS[service.category]}
+                      {CATEGORY_LABELS[service.category] || service.category}
                     </span>
                     <h3 className="font-semibold line-clamp-2">{service.title}</h3>
                   </div>
@@ -416,7 +443,9 @@ const BookService = () => {
                 <div className="border-t border-border pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Prestataire</span>
-                    <span className="font-medium">{service.helper.firstName} {service.helper.lastName.charAt(0)}.</span>
+                    <span className="font-medium">
+                      {helper ? `${helper.firstName} ${helper.lastName?.charAt(0)}.` : 'Helper'}
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Durée estimée</span>
