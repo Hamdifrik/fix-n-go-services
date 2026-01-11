@@ -2,6 +2,9 @@ import express from "express"
 import mongoose from "mongoose"
 import cors from "cors"
 import dotenv from "dotenv"
+import http from "http"
+import path from "path"
+import { fileURLToPath } from "url"
 
 // Import routes
 import authRoutes from "./routes/auth.routes.js"
@@ -10,11 +13,23 @@ import serviceRoutes from "./routes/service.routes.js"
 import bookingRoutes from "./routes/booking.routes.js"
 import reviewRoutes from "./routes/review.routes.js"
 import notificationRoutes from "./routes/notification.routes.js"
+import uploadRoutes from "./routes/upload.routes.js"
+import chatRoutes from "./routes/chat.routes.js"
+
+// Import socket
+import { initializeSocket } from "./socket/socket.js"
 
 dotenv.config()
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
 const app = express()
+const server = http.createServer(app)
 const PORT = process.env.PORT || 5000
+
+// Initialize Socket.io
+const io = initializeSocket(server)
 
 // Liste des origines autorisées
 const allowedOrigins = [
@@ -45,6 +60,9 @@ app.use(
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
+// Serve static files from uploads directory
+app.use("/uploads", express.static(path.join(__dirname, "uploads")))
+
 // Routes
 app.use("/api/auth", authRoutes)
 app.use("/api/users", userRoutes)
@@ -52,6 +70,8 @@ app.use("/api/services", serviceRoutes)
 app.use("/api/bookings", bookingRoutes)
 app.use("/api/reviews", reviewRoutes)
 app.use("/api/notifications", notificationRoutes)
+app.use("/api/upload", uploadRoutes)
+app.use("/api/chat", chatRoutes)
 
 // Health check route
 app.get("/api/health", (req, res) => {
@@ -76,8 +96,9 @@ mongoose
   })
   .then(() => {
     console.log("✅ Connected to MongoDB")
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`)
+      console.log(`🔌 WebSocket enabled`)
       console.log(`🌐 Origines autorisées: ${allowedOrigins.join(", ")}`)
     })
   })

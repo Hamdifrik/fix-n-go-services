@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import Navbar from '@/components/layout/Navbar';
 import { useCreateService } from '@/hooks/useServices';
+import { ImageUpload } from '@/components/chat/ImageUpload';
 import { cn } from '@/lib/utils';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -319,22 +320,12 @@ const HelperCreateService = () => {
                 <div className="space-y-6">
                   <div>
                     <Label className="mb-3 block">Photos du service (optionnel)</Label>
-                    <div className="grid grid-cols-3 gap-4">
-                      {[0, 1, 2].map((index) => (
-                        <div 
-                          key={index}
-                          className="aspect-square rounded-xl border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-primary transition-colors"
-                        >
-                          <div className="text-center text-muted-foreground">
-                            <Plus className="w-8 h-8 mx-auto mb-1" />
-                            <span className="text-xs">Ajouter</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Ajoutez jusqu'à 3 photos de vos réalisations
-                    </p>
+                    <ImageUpload
+                      value={formData.images}
+                      onChange={(urls) => handleInputChange('images', urls)}
+                      maxFiles={3}
+                      category="services"
+                    />
                   </div>
 
                   <div>
