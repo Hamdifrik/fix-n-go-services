@@ -18,6 +18,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import { useService } from '@/hooks/useServices';
 import { useHelperReviews } from '@/hooks/useReviews';
+import ChatWindow from '@/components/chat/ChatWindow';
 import { cn } from '@/lib/utils';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -48,6 +49,7 @@ const ServiceDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [selectedImage, setSelectedImage] = useState(0);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const { data: serviceResponse, isLoading, error } = useService(id || '');
   const service = serviceResponse?.data;
@@ -128,7 +130,7 @@ const ServiceDetail = () => {
       navigate('/login');
       return;
     }
-    console.log('Contact helper:', helperId);
+    setIsChatOpen(true);
   };
 
   return (
@@ -405,6 +407,19 @@ const ServiceDetail = () => {
           </div>
         </div>
       </main>
+
+      {/* Chat Window */}
+      {helper && (
+        <ChatWindow
+          helperId={helperId || ''}
+          helperName={`${helper.firstName} ${helper.lastName}`}
+          helperAvatar={helper.avatar}
+          serviceId={service._id}
+          serviceTitle={service.title}
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+        />
+      )}
 
       <Footer />
     </div>

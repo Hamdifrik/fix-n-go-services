@@ -406,3 +406,63 @@ export const notificationsApi = {
 export const healthCheck = async () => {
   return apiRequest<{ status: string; message: string }>('/health');
 };
+
+// ============================================
+// AXIOS-LIKE API OBJECT FOR HOOKS
+// ============================================
+const api = {
+  get: async (url: string, config?: { params?: Record<string, any> }) => {
+    const searchParams = new URLSearchParams();
+    if (config?.params) {
+      Object.entries(config.params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          searchParams.append(key, value.toString());
+        }
+      });
+    }
+    const query = searchParams.toString();
+    const fullUrl = query ? `${url}?${query}` : url;
+    const response = await fetch(`${API_URL}${fullUrl}`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Erreur');
+    return { data };
+  },
+
+  post: async (url: string, body?: any) => {
+    const response = await fetch(`${API_URL}${url}`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Erreur');
+    return { data };
+  },
+
+  put: async (url: string, body?: any) => {
+    const response = await fetch(`${API_URL}${url}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Erreur');
+    return { data };
+  },
+
+  delete: async (url: string, config?: { data?: any }) => {
+    const response = await fetch(`${API_URL}${url}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+      body: config?.data ? JSON.stringify(config.data) : undefined,
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.message || 'Erreur');
+    return { data };
+  },
+};
+
+export default api;
