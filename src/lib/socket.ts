@@ -92,8 +92,18 @@ class SocketService {
   }
 
   onMessageNotification(callback: (data: any) => void): () => void {
-    this.socket?.on('message:notification', callback);
-    return () => this.socket?.off('message:notification', callback);
+    const handler = (data: any) => {
+      console.log('📨 New message notification:', data);
+      callback(data);
+    };
+    this.socket?.on('message:notification', handler);
+    return () => this.socket?.off('message:notification', handler);
+  }
+
+  // Notification générale
+  onNotification(callback: (data: any) => void): () => void {
+    this.socket?.on('notification', callback);
+    return () => this.socket?.off('notification', callback);
   }
 
   onTypingStart(callback: (data: { userId: string; conversationId: string }) => void): () => void {
