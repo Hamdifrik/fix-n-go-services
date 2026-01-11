@@ -2,6 +2,8 @@ import { Server } from "socket.io"
 import jwt from "jsonwebtoken"
 import Message from "../models/Message.model.js"
 import Conversation from "../models/Conversation.model.js"
+import Notification from "../models/Notification.model.js"
+import User from "../models/User.model.js"
 
 // Store connected users
 const connectedUsers = new Map()
@@ -112,15 +114,38 @@ export const initializeSocket = (server) => {
         // Emit to all users in conversation
         io.to(`conversation:${conversationId}`).emit("message:new", populatedMessage)
 
+        // Get sender info for notification
+        const sender = await User.findById(userId).select("firstName lastName avatar")
+        const senderName = sender ? `${sender.firstName} ${sender.lastName}` : "Quelqu'un"
+
         // Notify other participants who are not in the conversation room
-        conversation.participants.forEach((participantId) => {
+        for (const participantId of conversation.participants) {
           if (participantId.toString() !== userId) {
+            // Create notification in database
+            await Notification.create({
+              user: participantId,
+              type: "message",
+              title: `Nouveau message de ${senderName}`,
+              message: content.length > 100 ? content.substring(0, 100) + "..." : content,
+              data: {
+                conversationId,
+                messageId: message._id,
+                senderId: userId,
+              },
+            })
+
+            // Emit real-time notification
             io.to(`user:${participantId}`).emit("message:notification", {
               conversationId,
-              message: populatedMessage,
+              messageId: message._id,
+              content,
+              senderName,
+              senderAvatar: sender?.avatar,
+              senderId: userId,
+              createdAt: message.createdAt,
             })
           }
-        })
+        }
 
       } catch (error) {
         console.error("Error sending message:", error)
