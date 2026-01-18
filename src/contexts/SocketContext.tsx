@@ -44,10 +44,10 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     socketService.onMessageNotification((data) => {
       // Incrémenter le compteur de messages non lus
       setUnreadMessages((prev) => prev + 1);
-      
+
       // Invalider le cache des conversations pour rafraîchir
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
-      queryClient.invalidateQueries({ queryKey: ['unread-count'] });
+      queryClient.invalidateQueries({ queryKey: ['unreadCount'] });
 
       // Afficher une notification toast
       toast({
@@ -66,12 +66,13 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     });
 
     // Écouter les nouveaux messages en temps réel
-    socketService.onNewMessage((message) => {
-      // Invalider le cache des messages pour la conversation
-      queryClient.invalidateQueries({ queryKey: ['messages', message.conversationId] });
+    socketService.onNewMessage((message: any) => {
+      const convId = message?.conversation?._id || message?.conversation || message?.conversationId;
+      if (convId) {
+        queryClient.invalidateQueries({ queryKey: ['messages', convId] });
+      }
       queryClient.invalidateQueries({ queryKey: ['conversations'] });
     });
-
   }, [queryClient, toast]);
 
   const disconnect = useCallback(() => {

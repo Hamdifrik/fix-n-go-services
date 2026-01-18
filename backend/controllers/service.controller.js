@@ -25,6 +25,15 @@ export const createService = async (req, res) => {
     })
   } catch (error) {
     console.error("Create service error:", error)
+
+    // Meilleur retour d'erreur (au lieu d'un 500 générique)
+    if (error?.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      })
+    }
+
     res.status(500).json({
       success: false,
       message: "Failed to create service.",
