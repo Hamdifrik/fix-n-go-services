@@ -16,8 +16,9 @@ export const useUploadImage = () => {
   return useMutation({
     mutationFn: async ({ file, category = 'general' }: { file: File; category?: string }) => {
       const formData = new FormData();
-      formData.append('image', file);
+      // IMPORTANT: ajouter "category" AVANT le fichier pour que multer le voie dans destination()
       formData.append('category', category);
+      formData.append('image', file);
 
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/upload/single`, {
@@ -43,10 +44,11 @@ export const useUploadImages = () => {
   return useMutation({
     mutationFn: async ({ files, category = 'general' }: { files: File[]; category?: string }) => {
       const formData = new FormData();
+      // IMPORTANT: ajouter "category" AVANT les fichiers pour que multer le voie dans destination()
+      formData.append('category', category);
       files.forEach((file) => {
         formData.append('images', file);
       });
-      formData.append('category', category);
 
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/upload/multiple`, {
