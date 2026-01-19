@@ -97,9 +97,9 @@ const AuthenticatedNavbar = ({ user, onLogout }: AuthenticatedNavbarProps) => {
 
           {/* Actions Desktop */}
           <div className="hidden md:flex items-center gap-3">
-            {/* Messages */}
+          {/* Messages */}
             <Button variant="ghost" size="icon" asChild>
-              <Link to={dashboardPath + '?tab=messages'}>
+              <Link to="/messages">
                 <MessageCircle className="w-5 h-5" />
               </Link>
             </Button>

@@ -3,7 +3,7 @@ import api from '@/lib/api';
 
 export interface Message {
   _id: string;
-  conversation: string;
+  conversation: string | { _id: string };
   sender: {
     _id: string;
     firstName: string;

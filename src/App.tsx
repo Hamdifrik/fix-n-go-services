@@ -15,6 +15,7 @@ import Services from "./pages/Services";
 import ServiceDetail from "./pages/ServiceDetail";
 import BookService from "./pages/BookService";
 import HelperCreateService from "./pages/HelperCreateService";
+import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/dashboard" element={<ClientDashboard />} />
           <Route path="/profile" element={<ClientProfile />} />
           <Route path="/book/:serviceId" element={<BookService />} />
+          <Route path="/messages" element={<Messages />} />
           
           {/* Helper Routes */}
           <Route path="/helper/dashboard" element={<NewHelperDashboard />} />
