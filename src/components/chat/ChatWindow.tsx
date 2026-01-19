@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Send, Paperclip, Smile, Check, CheckCheck, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { X, Send, Paperclip, Check, CheckCheck, Loader2, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   useGetOrCreateConversation, 
   useMessages, 
-  useSendMessage,
   useMarkAsRead,
   Message,
 } from '@/hooks/useChat';
@@ -34,8 +35,9 @@ export const ChatWindow = ({
   isOpen,
   onClose,
 }: ChatWindowProps) => {
+  const navigate = useNavigate();
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [localMessages, setLocalMessages] = useState<Message[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -44,7 +46,6 @@ export const ChatWindow = ({
 
   const getOrCreateConversation = useGetOrCreateConversation();
   const { data: messagesData, isLoading: messagesLoading } = useMessages(conversationId || '');
-  const sendMessageMutation = useSendMessage();
   const markAsRead = useMarkAsRead();
   const uploadImage = useUploadImage();
 
@@ -54,12 +55,10 @@ export const ChatWindow = ({
   // Initialize conversation and socket
   useEffect(() => {
     if (isOpen && helperId && token) {
-      // Connect socket if not connected
       if (!socketService.isConnected()) {
         socketService.connect(token);
       }
 
-      // Get or create conversation
       getOrCreateConversation.mutate(
         { helperId, serviceId },
         {
@@ -68,7 +67,7 @@ export const ChatWindow = ({
             setConversationId(conv._id);
             socketService.joinConversation(conv._id);
           },
-          onError: (error) => {
+          onError: () => {
             toast.error('Erreur lors de la création de la conversation');
           },
         }
@@ -82,10 +81,10 @@ export const ChatWindow = ({
     };
   }, [isOpen, helperId, serviceId, token]);
 
-  // Load messages when conversation is ready
+  // Load messages
   useEffect(() => {
     if (messagesData?.data) {
-      setMessages(messagesData.data);
+      setLocalMessages(messagesData.data);
     }
   }, [messagesData]);
 
@@ -93,24 +92,35 @@ export const ChatWindow = ({
   useEffect(() => {
     if (!conversationId) return;
 
-    const unsubNewMessage = socketService.onNewMessage((newMessage) => {
-      if (newMessage.conversation === conversationId) {
-        setMessages((prev) => [...prev, newMessage]);
+    const handleNewMessage = (newMessage: Message) => {
+      const msgConvId = typeof newMessage.conversation === 'string' 
+        ? newMessage.conversation 
+        : newMessage.conversation?._id;
+      
+      if (msgConvId === conversationId) {
+        setLocalMessages(prev => {
+          if (prev.some(m => m._id === newMessage._id)) return prev;
+          return [...prev, newMessage];
+        });
         markAsRead.mutate(conversationId);
       }
-    });
+    };
 
-    const unsubTypingStart = socketService.onTypingStart((data) => {
+    const handleTypingStart = (data: { userId: string; conversationId: string }) => {
       if (data.conversationId === conversationId && data.userId !== currentUser._id) {
         setIsTyping(true);
       }
-    });
+    };
 
-    const unsubTypingStop = socketService.onTypingStop((data) => {
+    const handleTypingStop = (data: { userId: string; conversationId: string }) => {
       if (data.conversationId === conversationId && data.userId !== currentUser._id) {
         setIsTyping(false);
       }
-    });
+    };
+
+    const unsubNewMessage = socketService.onNewMessage(handleNewMessage);
+    const unsubTypingStart = socketService.onTypingStart(handleTypingStart);
+    const unsubTypingStop = socketService.onTypingStop(handleTypingStop);
 
     return () => {
       unsubNewMessage();
@@ -119,12 +129,12 @@ export const ChatWindow = ({
     };
   }, [conversationId, currentUser._id]);
 
-  // Scroll to bottom on new messages
+  // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [localMessages, isTyping]);
 
-  // Mark as read when conversation opens
+  // Mark as read
   useEffect(() => {
     if (conversationId && isOpen) {
       markAsRead.mutate(conversationId);
@@ -133,13 +143,9 @@ export const ChatWindow = ({
 
   const handleTyping = useCallback(() => {
     if (!conversationId) return;
-
     socketService.startTyping(conversationId);
 
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     typingTimeoutRef.current = setTimeout(() => {
       socketService.stopTyping(conversationId);
     }, 2000);
@@ -148,19 +154,14 @@ export const ChatWindow = ({
   const handleSendMessage = () => {
     if (!message.trim() || !conversationId) return;
 
-    // Send via WebSocket for real-time
     socketService.sendMessage({
       conversationId,
       content: message.trim(),
       messageType: 'text',
     });
 
-    // Clear typing indicator
     socketService.stopTyping(conversationId);
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     setMessage('');
   };
 
@@ -176,14 +177,10 @@ export const ChatWindow = ({
     if (!file || !conversationId) return;
 
     try {
-      const result = await uploadImage.mutateAsync({
-        file,
-        category: 'chat',
-      });
-
+      const result = await uploadImage.mutateAsync({ file, category: 'chat' });
       socketService.sendMessage({
         conversationId,
-        content: 'Image',
+        content: '📷 Image',
         messageType: 'image',
         attachments: [{
           url: result.data.url,
@@ -191,13 +188,11 @@ export const ChatWindow = ({
           mimetype: result.data.mimetype,
         }],
       });
-    } catch (error) {
-      toast.error('Erreur lors de l\'upload de l\'image');
+    } catch {
+      toast.error("Erreur lors de l'upload de l'image");
     }
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const formatTime = (date: string) => {
@@ -207,33 +202,34 @@ export const ChatWindow = ({
     });
   };
 
+  const openFullChat = () => {
+    if (conversationId) {
+      onClose();
+      navigate(`/messages?conversation=${conversationId}`);
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 w-96 h-[500px] bg-card border border-border rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden">
+    <div className="fixed bottom-4 right-4 w-96 h-[500px] bg-card border border-border rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden animate-in slide-in-from-bottom-4">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border bg-muted/50">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold">
-            {helperAvatar ? (
-              <img src={getImageUrl(helperAvatar)} alt={helperName} className="w-full h-full rounded-full object-cover" />
-            ) : (
-              helperName.charAt(0)
-            )}
-          </div>
-          <div>
+        <button onClick={openFullChat} className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+          <Avatar className="w-10 h-10">
+            <AvatarImage src={helperAvatar ? getImageUrl(helperAvatar) : undefined} />
+            <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-primary-foreground">
+              {helperName.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="text-left">
             <p className="font-semibold text-sm">{helperName}</p>
             {serviceTitle && (
-              <p className="text-xs text-muted-foreground truncate max-w-[180px]">
-                {serviceTitle}
-              </p>
+              <p className="text-xs text-muted-foreground truncate max-w-[180px]">{serviceTitle}</p>
             )}
           </div>
-        </div>
-        <button
-          onClick={onClose}
-          className="p-2 rounded-full hover:bg-muted transition-colors"
-        >
+        </button>
+        <button onClick={onClose} className="p-2 rounded-full hover:bg-muted transition-colors">
           <X className="w-5 h-5" />
         </button>
       </div>
@@ -244,56 +240,32 @@ export const ChatWindow = ({
           <div className="flex items-center justify-center h-full">
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
-        ) : messages.length === 0 ? (
+        ) : localMessages.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">
             <p className="text-sm">Démarrez la conversation!</p>
             <p className="text-xs mt-1">Envoyez un message à {helperName}</p>
           </div>
         ) : (
           <div className="space-y-3">
-            {messages.map((msg) => {
+            {localMessages.map((msg) => {
               const isOwn = msg.sender._id === currentUser._id;
               return (
-                <div
-                  key={msg._id}
-                  className={cn(
-                    "flex",
-                    isOwn ? "justify-end" : "justify-start"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "max-w-[75%] rounded-2xl px-4 py-2",
-                      isOwn
-                        ? "bg-primary text-primary-foreground rounded-br-sm"
-                        : "bg-muted rounded-bl-sm"
-                    )}
-                  >
+                <div key={msg._id} className={cn("flex", isOwn ? "justify-end" : "justify-start")}>
+                  <div className={cn(
+                    "max-w-[75%] rounded-2xl px-4 py-2",
+                    isOwn ? "bg-primary text-primary-foreground rounded-br-sm" : "bg-muted rounded-bl-sm"
+                  )}>
                     {msg.messageType === 'image' && msg.attachments?.[0] && (
-                      <img
-                        src={getImageUrl(msg.attachments[0].url)}
-                        alt="Image"
-                        className="rounded-lg max-w-full mb-2"
-                      />
+                      <img src={getImageUrl(msg.attachments[0].url)} alt="Image" className="rounded-lg max-w-full mb-2" />
                     )}
-                    <p className="text-sm">{msg.content}</p>
-                    <div className={cn(
-                      "flex items-center gap-1 mt-1",
-                      isOwn ? "justify-end" : "justify-start"
-                    )}>
-                      <span className={cn(
-                        "text-[10px]",
-                        isOwn ? "text-primary-foreground/70" : "text-muted-foreground"
-                      )}>
+                    {msg.content && msg.content !== '📷 Image' && (
+                      <p className="text-sm">{msg.content}</p>
+                    )}
+                    <div className={cn("flex items-center gap-1 mt-1", isOwn ? "justify-end" : "justify-start")}>
+                      <span className={cn("text-[10px]", isOwn ? "text-primary-foreground/70" : "text-muted-foreground")}>
                         {formatTime(msg.createdAt)}
                       </span>
-                      {isOwn && (
-                        msg.isRead ? (
-                          <CheckCheck className="w-3 h-3 text-primary-foreground/70" />
-                        ) : (
-                          <Check className="w-3 h-3 text-primary-foreground/70" />
-                        )
-                      )}
+                      {isOwn && (msg.isRead ? <CheckCheck className="w-3 h-3 text-primary-foreground/70" /> : <Check className="w-3 h-3 text-primary-foreground/70" />)}
                     </div>
                   </div>
                 </div>
@@ -318,34 +290,18 @@ export const ChatWindow = ({
       {/* Input */}
       <div className="p-4 border-t border-border">
         <div className="flex items-center gap-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="hidden"
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="p-2 rounded-full hover:bg-muted transition-colors text-muted-foreground"
-          >
-            <Paperclip className="w-5 h-5" />
-          </button>
+          <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+          <Button variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={uploadImage.isPending}>
+            {uploadImage.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5" />}
+          </Button>
           <Input
             value={message}
-            onChange={(e) => {
-              setMessage(e.target.value);
-              handleTyping();
-            }}
-            onKeyPress={handleKeyPress}
+            onChange={(e) => { setMessage(e.target.value); handleTyping(); }}
+            onKeyDown={handleKeyPress}
             placeholder="Écrivez un message..."
             className="flex-1"
           />
-          <Button
-            size="icon"
-            onClick={handleSendMessage}
-            disabled={!message.trim() || !conversationId}
-          >
+          <Button size="icon" onClick={handleSendMessage} disabled={!message.trim() || !conversationId}>
             <Send className="w-4 h-4" />
           </Button>
         </div>
