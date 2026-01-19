@@ -17,14 +17,15 @@ export const uploadImage = async (req, res) => {
     }
 
     const category = req.body.category || "general"
-    const imageUrl = `/uploads/${category}/${req.file.filename}`
+    // Ajouter BACKEND_URL au chemin
+    const imageUrl = `${process.env.BACKEND_URL}/uploads/${category}/${req.file.filename}`
 
     res.status(201).json({
       success: true,
       message: "Image uploaded successfully",
       data: {
         filename: req.file.filename,
-        url: imageUrl,
+        url: imageUrl, // URL complète avec BACKEND_URL
         originalName: req.file.originalname,
         size: req.file.size,
         mimetype: req.file.mimetype,
@@ -52,7 +53,8 @@ export const uploadImages = async (req, res) => {
     const category = req.body.category || "general"
     const uploadedFiles = req.files.map((file) => ({
       filename: file.filename,
-      url: `/uploads/${category}/${file.filename}`,
+      // Ajouter BACKEND_URL au chemin
+      url: `${process.env.BACKEND_URL}/uploads/${category}/${file.filename}`,
       originalName: file.originalname,
       size: file.size,
       mimetype: file.mimetype,
@@ -71,6 +73,8 @@ export const uploadImages = async (req, res) => {
     })
   }
 }
+
+
 
 // Delete image
 export const deleteImage = async (req, res) => {
