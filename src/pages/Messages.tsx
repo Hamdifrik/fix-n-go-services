@@ -210,7 +210,7 @@ const Messages = () => {
                               }
                             </p>
                             {unreadCount > 0 && (
-                              <Badge className="bg-secondary text-secondary-foreground text-xs min-w-[20px] h-5 flex items-center justify-center">
+                              <Badge className="bg-destructive text-destructive-foreground text-xs min-w-[20px] h-5 flex items-center justify-center animate-pulse">
                                 {unreadCount > 99 ? '99+' : unreadCount}
                               </Badge>
                             )}
