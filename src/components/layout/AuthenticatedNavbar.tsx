@@ -22,10 +22,12 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import NotificationBell from '@/components/notifications/NotificationBell';
+import MessageDropdown from '@/components/messages/MessageDropdown';
 import { useSocket } from '@/contexts/SocketContext';
 
 interface AuthenticatedNavbarProps {
   user: {
+    id?: string;
     name: string;
     email: string;
     role: 'client' | 'helper';
@@ -97,12 +99,8 @@ const AuthenticatedNavbar = ({ user, onLogout }: AuthenticatedNavbarProps) => {
 
           {/* Actions Desktop */}
           <div className="hidden md:flex items-center gap-3">
-          {/* Messages */}
-            <Button variant="ghost" size="icon" asChild>
-              <Link to="/messages">
-                <MessageCircle className="w-5 h-5" />
-              </Link>
-            </Button>
+            {/* Messages Dropdown */}
+            <MessageDropdown />
 
             {/* Notifications */}
             <NotificationBell />
@@ -161,6 +159,7 @@ const AuthenticatedNavbar = ({ user, onLogout }: AuthenticatedNavbarProps) => {
 
           {/* Menu Mobile */}
           <div className="flex md:hidden items-center gap-2">
+            <MessageDropdown />
             <NotificationBell />
             <button
               onClick={() => setIsOpen(!isOpen)}
