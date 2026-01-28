@@ -20,6 +20,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useBookings } from '@/hooks/useBookings';
 import { useServices } from '@/hooks/useServices';
+import { useUnreadCount } from '@/hooks/useChat';
 import { Skeleton } from '@/components/ui/skeleton';
 import ServiceCard from '@/components/services/ServiceCard';
 
@@ -65,6 +66,7 @@ const ClientDashboard = () => {
   // API Calls
   const { data: bookingsResponse, isLoading: isLoadingBookings } = useBookings();
   const { data: servicesResponse, isLoading: isLoadingServices } = useServices({ limit: 4 });
+  const { data: unreadData } = useUnreadCount();
 
   const bookings = bookingsResponse?.data || [];
   const recommendedServices = (servicesResponse?.data || []).map((service: any) => ({
@@ -125,10 +127,12 @@ const ClientDashboard = () => {
     return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
   };
 
+  const unreadCount = unreadData?.count || 0;
+
   const sidebarItems = [
     { id: 'home', icon: Home, label: 'Accueil' },
     { id: 'bookings', icon: CalendarIcon, label: 'Mes réservations', badge: bookings.length },
-    { id: 'messages', icon: MessageSquare, label: 'Messages', badge: 0 },
+    { id: 'messages', icon: MessageSquare, label: 'Messages', badge: unreadCount, path: '/messages', isUnread: unreadCount > 0 },
     { id: 'profile', icon: User, label: 'Profil', path: '/profile' },
     { id: 'settings', icon: Settings, label: 'Paramètres' },
   ];
@@ -187,7 +191,12 @@ const ClientDashboard = () => {
                   <item.icon className="w-5 h-5" />
                   <span className="flex-1">{item.label}</span>
                   {item.badge !== undefined && item.badge > 0 && (
-                    <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
+                    <span className={cn(
+                      "min-w-5 h-5 px-1 rounded-full text-xs flex items-center justify-center",
+                      item.isUnread 
+                        ? "bg-destructive text-destructive-foreground animate-pulse" 
+                        : "bg-primary text-primary-foreground"
+                    )}>
                       {item.badge}
                     </span>
                   )}

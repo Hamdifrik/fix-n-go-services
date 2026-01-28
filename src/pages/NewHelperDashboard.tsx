@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { useMyServices } from '@/hooks/useServices';
 import { useBookings, useUpdateBookingStatus, useCancelBooking } from '@/hooks/useBookings';
 import { useUserStats } from '@/hooks/useStats';
+import { useUnreadCount } from '@/hooks/useChat';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface UserData {
@@ -69,6 +70,7 @@ const NewHelperDashboard = () => {
   const { data: servicesResponse, isLoading: isLoadingServices } = useMyServices();
   const { data: bookingsResponse, isLoading: isLoadingBookings } = useBookings();
   const { data: statsResponse, isLoading: isLoadingStats } = useUserStats();
+  const { data: unreadData } = useUnreadCount();
   
   const updateBookingStatus = useUpdateBookingStatus();
   const cancelBooking = useCancelBooking();
@@ -117,11 +119,13 @@ const NewHelperDashboard = () => {
     await cancelBooking.mutateAsync({ id: bookingId, reason: 'Refusé par le helper' });
   };
 
+  const unreadCount = unreadData?.count || 0;
+
   const sidebarItems = [
     { id: 'home', icon: Home, label: 'Accueil' },
     { id: 'services', icon: Package, label: 'Mes services', badge: myServices.length },
     { id: 'bookings', icon: CalendarIcon, label: 'Réservations', badge: pendingBookings.length },
-    { id: 'messages', icon: MessageSquare, label: 'Messages', badge: 0 },
+    { id: 'messages', icon: MessageSquare, label: 'Messages', badge: unreadCount, path: '/messages', isUnread: unreadCount > 0 },
     { id: 'wallet', icon: Wallet, label: 'Portefeuille' },
     { id: 'settings', icon: Settings, label: 'Paramètres' },
   ];
@@ -170,7 +174,13 @@ const NewHelperDashboard = () => {
             {sidebarItems.map((item) => (
               <li key={item.id}>
                 <button
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => {
+                    if (item.path) {
+                      navigate(item.path);
+                    } else {
+                      setActiveTab(item.id);
+                    }
+                  }}
                   className={cn(
                     "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all",
                     activeTab === item.id
@@ -182,8 +192,12 @@ const NewHelperDashboard = () => {
                   <span className="flex-1">{item.label}</span>
                   {item.badge !== undefined && item.badge > 0 && (
                     <span className={cn(
-                      "w-5 h-5 rounded-full text-xs flex items-center justify-center",
-                      item.id === 'bookings' ? "bg-warning text-warning-foreground" : "bg-primary text-primary-foreground"
+                      "min-w-5 h-5 px-1 rounded-full text-xs flex items-center justify-center",
+                      item.isUnread 
+                        ? "bg-destructive text-destructive-foreground animate-pulse" 
+                        : item.id === 'bookings' 
+                          ? "bg-warning text-warning-foreground" 
+                          : "bg-primary text-primary-foreground"
                     )}>
                       {item.badge}
                     </span>
