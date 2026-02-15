@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import Navbar from '@/components/layout/Navbar';
+import SmartNavbar from '@/components/layout/SmartNavbar';
 import Footer from '@/components/layout/Footer';
 import { useService } from '@/hooks/useServices';
 import { useCreateBooking } from '@/hooks/useBookings';
@@ -77,7 +77,7 @@ const BookService = () => {
   if (isLoadingService) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
+        <SmartNavbar />
         <main className="pt-20 container mx-auto px-4 py-8">
           <Skeleton className="h-8 w-64 mb-8" />
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -97,7 +97,7 @@ const BookService = () => {
   if (!service) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
+        <SmartNavbar />
         <main className="pt-20 container mx-auto px-4 py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">Service non trouvé</h1>
           <Link to="/services">
@@ -125,7 +125,7 @@ const BookService = () => {
   const handleSubmit = async () => {
     const scheduledDate = new Date(`${formData.date}T${formData.time}:00`);
     
-    await createBooking.mutateAsync({
+    const result = await createBooking.mutateAsync({
       serviceId: service._id,
       scheduledDate: scheduledDate.toISOString(),
       address: {
@@ -137,7 +137,13 @@ const BookService = () => {
       notes: formData.notes || undefined,
     });
 
-    navigate('/dashboard');
+    // Navigate to booking detail page
+    const bookingId = result?.data?._id;
+    if (bookingId) {
+      navigate(`/bookings/${bookingId}`);
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   const timeSlots = [
@@ -159,7 +165,7 @@ const BookService = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <SmartNavbar />
       
       <main className="pt-20">
         <div className="bg-muted/30 py-4">

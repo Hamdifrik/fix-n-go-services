@@ -1,4 +1,4 @@
-import Navbar from '@/components/layout/Navbar';
+import SmartNavbar from '@/components/layout/SmartNavbar';
 import Footer from '@/components/layout/Footer';
 import HeroSection from '@/components/home/HeroSection';
 import ServicesSection from '@/components/home/ServicesSection';
@@ -9,7 +9,7 @@ import CTASection from '@/components/home/CTASection';
 const Index = () => {
   return (
     <div className="min-h-screen">
-      <Navbar />
+      <SmartNavbar />
       <main>
         <HeroSection />
         <ServicesSection />

@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import Navbar from '@/components/layout/Navbar';
+import SmartNavbar from '@/components/layout/SmartNavbar';
 import { useCreateService } from '@/hooks/useServices';
 import { ImageUpload } from '@/components/chat/ImageUpload';
 import { cn } from '@/lib/utils';
@@ -127,7 +127,7 @@ const HelperCreateService = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <SmartNavbar />
       
       <main className="pt-20">
         {/* Header */}
