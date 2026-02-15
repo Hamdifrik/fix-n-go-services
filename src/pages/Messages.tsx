@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import Navbar from '@/components/layout/Navbar';
+import SmartNavbar from '@/components/layout/SmartNavbar';
 import { useConversations, Conversation } from '@/hooks/useChat';
 import { useSocket } from '@/contexts/SocketContext';
 import { getImageUrl } from '@/hooks/useUpload';
@@ -84,7 +84,7 @@ const Messages = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <SmartNavbar />
       
       <main className="pt-16 h-screen">
         <div className="h-[calc(100vh-4rem)] flex">

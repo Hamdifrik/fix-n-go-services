@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import Navbar from '@/components/layout/Navbar';
+import SmartNavbar from '@/components/layout/SmartNavbar';
 import Footer from '@/components/layout/Footer';
 import ServiceCard from '@/components/services/ServiceCard';
 import ServiceFiltersComponent from '@/components/services/ServiceFilters';
@@ -97,7 +97,7 @@ const Services = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <SmartNavbar />
       
       <main className="pt-20">
         {/* Header */}

@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import Navbar from '@/components/layout/Navbar';
+import SmartNavbar from '@/components/layout/SmartNavbar';
 import Footer from '@/components/layout/Footer';
 import { useService } from '@/hooks/useServices';
 import { useHelperReviews } from '@/hooks/useReviews';
@@ -64,7 +64,7 @@ const ServiceDetail = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
+        <SmartNavbar />
         <main className="pt-20 container mx-auto px-4 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
@@ -87,7 +87,7 @@ const ServiceDetail = () => {
   if (error || !service) {
     return (
       <div className="min-h-screen bg-background">
-        <Navbar />
+        <SmartNavbar />
         <main className="pt-20 container mx-auto px-4 py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">Service non trouvé</h1>
           <Link to="/services">
@@ -135,7 +135,7 @@ const ServiceDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <SmartNavbar />
       
       <main className="pt-20">
         {/* Breadcrumb */}
