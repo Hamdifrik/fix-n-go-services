@@ -374,9 +374,10 @@ const NewHelperDashboard = () => {
                     const client = typeof booking.client === 'string' ? null : booking.client;
                     
                     return (
-                      <div 
+                      <Link 
                         key={booking._id}
-                        className="p-5 hover:bg-muted/30 transition-colors"
+                        to={`/bookings/${booking._id}`}
+                        className="block p-5 hover:bg-muted/30 transition-colors cursor-pointer"
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div className="flex-1 min-w-0">
@@ -430,7 +431,7 @@ const NewHelperDashboard = () => {
                             )}
                           </div>
                         </div>
-                      </div>
+                      </Link>
                     );
                   })}
                 </div>
