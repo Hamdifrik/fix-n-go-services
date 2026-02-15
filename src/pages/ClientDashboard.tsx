@@ -293,9 +293,10 @@ const ClientDashboard = () => {
                         const helper = typeof booking.helper === 'string' ? null : booking.helper;
                         
                         return (
-                          <div 
+                          <Link 
                             key={booking._id}
-                            className="p-5 hover:bg-muted/30 transition-colors"
+                            to={`/bookings/${booking._id}`}
+                            className="block p-5 hover:bg-muted/30 transition-colors cursor-pointer"
                           >
                             <div className="flex items-start gap-4">
                               <img
@@ -331,7 +332,7 @@ const ClientDashboard = () => {
                                 </p>
                               </div>
                             </div>
-                          </div>
+                          </Link>
                         );
                       })}
                     </div>
@@ -389,9 +390,10 @@ const ClientDashboard = () => {
                     const helper = typeof booking.helper === 'string' ? null : booking.helper;
                     
                     return (
-                      <div 
+                      <Link 
                         key={booking._id}
-                        className="p-5 hover:bg-muted/30 transition-colors"
+                        to={`/bookings/${booking._id}`}
+                        className="block p-5 hover:bg-muted/30 transition-colors cursor-pointer"
                       >
                         <div className="flex items-start gap-4">
                           <img
@@ -446,7 +448,7 @@ const ClientDashboard = () => {
                             )}
                           </div>
                         </div>
-                      </div>
+                      </Link>
                     );
                   })}
                 </div>
