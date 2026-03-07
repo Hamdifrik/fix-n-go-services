@@ -8,7 +8,10 @@ import {
   Shield, 
   Clock,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Star,
+  CheckCircle2,
+  Users
 } from 'lucide-react';
 import { SERVICE_LABELS, ServiceType } from '@/types';
 
@@ -42,21 +45,20 @@ const HeroSection = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6 animate-fade-in">
             <Sparkles className="w-4 h-4" />
-            <span>+10 000 interventions réalisées</span>
+            <span>La plateforme n°1 du dépannage en France</span>
           </div>
 
           {/* Titre Principal */}
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 animate-slide-up" style={{ animationDelay: '0.1s' }}>
-            Trouvez un{' '}
-            <span className="gradient-text">professionnel</span>
+          <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold mb-6 animate-slide-up leading-tight" style={{ animationDelay: '0.1s' }}>
+            Votre <span className="gradient-text">dépannage</span>
             <br />
-            pour tous vos dépannages
+            en un clic, <span className="gradient-text">garanti</span>
           </h1>
 
           {/* Sous-titre */}
           <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto animate-slide-up" style={{ animationDelay: '0.2s' }}>
-            Plomberie, électricité,mécanicien, serrurerie... Connectez-vous avec des Helpers qualifiés près de chez vous, 
-            disponibles 7j/7 avec paiement sécurisé.
+            Plomberie, électricité, serrurerie, mécanicien... Des <strong className="text-foreground">Helpers certifiés</strong> près de chez vous, 
+            disponibles <strong className="text-foreground">7j/7</strong> avec paiement 100% sécurisé.
           </p>
 
           {/* Barre de recherche */}
@@ -116,28 +118,35 @@ const HeroSection = () => {
             </div>
           </div>
 
-          {/* Statistiques */}
-          <div className="grid grid-cols-3 gap-6 md:gap-12 max-w-2xl mx-auto mt-12 animate-fade-in" style={{ animationDelay: '0.5s' }}>
-            <div className="text-center">
+          {/* Trust Badges */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 max-w-3xl mx-auto mt-12 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+            <div className="text-center p-4 rounded-xl bg-card/50 backdrop-blur-sm border border-border/30">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Shield className="w-5 h-5 text-secondary" />
-                <span className="text-2xl md:text-3xl font-bold">100%</span>
               </div>
-              <p className="text-sm text-muted-foreground">Paiement sécurisé</p>
+              <span className="text-2xl md:text-3xl font-bold block">100%</span>
+              <p className="text-xs text-muted-foreground mt-1">Paiement sécurisé</p>
             </div>
-            <div className="text-center">
+            <div className="text-center p-4 rounded-xl bg-card/50 backdrop-blur-sm border border-border/30">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Clock className="w-5 h-5 text-primary" />
-                <span className="text-2xl md:text-3xl font-bold">&lt;30min</span>
               </div>
-              <p className="text-sm text-muted-foreground">Temps de réponse</p>
+              <span className="text-2xl md:text-3xl font-bold block">&lt;30min</span>
+              <p className="text-xs text-muted-foreground mt-1">Temps de réponse</p>
             </div>
-            <div className="text-center">
+            <div className="text-center p-4 rounded-xl bg-card/50 backdrop-blur-sm border border-border/30">
               <div className="flex items-center justify-center gap-2 mb-2">
-                <Zap className="w-5 h-5 text-warning" />
-                <span className="text-2xl md:text-3xl font-bold">7j/7</span>
+                <Star className="w-5 h-5 text-amber-500" />
               </div>
-              <p className="text-sm text-muted-foreground">Disponibilité</p>
+              <span className="text-2xl md:text-3xl font-bold block">4.8/5</span>
+              <p className="text-xs text-muted-foreground mt-1">Note moyenne</p>
+            </div>
+            <div className="text-center p-4 rounded-xl bg-card/50 backdrop-blur-sm border border-border/30">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Users className="w-5 h-5 text-primary" />
+              </div>
+              <span className="text-2xl md:text-3xl font-bold block">10K+</span>
+              <p className="text-xs text-muted-foreground mt-1">Interventions réussies</p>
             </div>
           </div>
         </div>

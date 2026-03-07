@@ -50,7 +50,7 @@ export interface Booking {
   helper: User | string;
   service: Service | string;
   scheduledDate: string;
-  status: 'pending' | 'confirmed' | 'in-progress' | 'completed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'in-progress' | 'awaiting-validation' | 'completed' | 'cancelled';
   address: {
     street: string;
     city: string;
