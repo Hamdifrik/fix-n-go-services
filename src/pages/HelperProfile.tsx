@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import SmartNavbar from '@/components/layout/SmartNavbar';
 import { Button } from '@/components/ui/button';
 import { 
   Wrench, 
@@ -929,6 +930,8 @@ const HelperProfile = () => {
             )}
           </div>
         </div>
+        </div>
+      </div>
       </div>
     </div>
   );
