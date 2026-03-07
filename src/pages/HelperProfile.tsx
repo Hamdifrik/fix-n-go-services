@@ -403,18 +403,8 @@ const HelperProfile = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-card border-b border-border sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Link to="/helper/dashboard" className="p-2 hover:bg-muted rounded-lg transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div>
-            <h1 className="text-xl font-semibold">Mon Profil Helper</h1>
-            <p className="text-sm text-muted-foreground">Gérez votre profil professionnel</p>
-          </div>
-        </div>
-      </header>
-
+      <SmartNavbar />
+      <div className="pt-20">
       <div className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Sidebar - Profil Card */}
