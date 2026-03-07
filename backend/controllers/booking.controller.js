@@ -100,7 +100,7 @@ export const getBookingById = async (req, res) => {
     const booking = await Booking.findById(req.params.id)
       .populate("client", "firstName lastName email phone")
       .populate("helper", "firstName lastName email phone avatar rating")
-      .populate("service", "title category price duration")
+      .populate("service", "title category price duration images description")
 
     if (!booking) {
       return res.status(404).json({
@@ -146,8 +146,33 @@ export const updateBookingStatus = async (req, res) => {
       })
     }
 
-    // Only helper can update status
-    if (booking.helper.toString() !== req.userId.toString()) {
+    const isHelper = booking.helper.toString() === req.userId.toString()
+    const isClient = booking.client.toString() === req.userId.toString()
+
+    // Validate transitions
+    if (status === 'awaiting-validation' && !isHelper) {
+      return res.status(403).json({
+        success: false,
+        message: "Only the helper can submit for validation.",
+      })
+    }
+
+    if (status === 'completed' && !isClient) {
+      return res.status(403).json({
+        success: false,
+        message: "Only the client can confirm completion.",
+      })
+    }
+
+    // Client can reject back to in-progress
+    if (status === 'in-progress' && booking.status === 'awaiting-validation' && isClient) {
+      // allowed
+    } else if (!isHelper && !isClient) {
+      return res.status(403).json({
+        success: false,
+        message: "Unauthorized.",
+      })
+    } else if (!isHelper && status !== 'completed' && !(status === 'in-progress' && booking.status === 'awaiting-validation')) {
       return res.status(403).json({
         success: false,
         message: "Only the helper can update booking status.",
@@ -162,12 +187,20 @@ export const updateBookingStatus = async (req, res) => {
 
     await booking.save()
 
-    // Create notification for client
+    // Create notification
+    const notifyUserId = isHelper ? booking.client : booking.helper
+    const statusMessages = {
+      'confirmed': 'Votre réservation a été acceptée',
+      'in-progress': booking.status === 'awaiting-validation' ? 'Le client a demandé une reprise du travail' : 'L\'intervention a démarré',
+      'awaiting-validation': 'Le prestataire a terminé, veuillez confirmer',
+      'completed': 'L\'intervention a été validée et terminée',
+    }
+
     await Notification.create({
-      user: booking.client,
+      user: notifyUserId,
       type: "booking",
-      title: "Booking Status Updated",
-      message: `Your booking status has been updated to ${status}`,
+      title: "Mise à jour de réservation",
+      message: statusMessages[status] || `Statut mis à jour: ${status}`,
       relatedId: booking._id,
     })
 

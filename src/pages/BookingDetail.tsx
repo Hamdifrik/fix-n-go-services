@@ -13,6 +13,9 @@ import {
   Wrench,
   MessageSquare,
   Phone,
+  ThumbsUp,
+  ThumbsDown,
+  ShieldCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -30,13 +33,15 @@ const STATUS_STEPS = [
   { key: 'pending', label: 'En attente', description: 'La réservation a été envoyée au prestataire', icon: Clock },
   { key: 'confirmed', label: 'Confirmée', description: 'Le prestataire a accepté votre demande', icon: CheckCircle2 },
   { key: 'in-progress', label: 'En cours', description: "L'intervention est en cours", icon: Wrench },
-  { key: 'completed', label: 'Terminée', description: 'Le travail a été effectué avec succès', icon: CheckCircle2 },
+  { key: 'awaiting-validation', label: 'Validation client', description: 'Le helper a terminé, en attente de confirmation du client', icon: ShieldCheck },
+  { key: 'completed', label: 'Terminée', description: 'Le travail a été confirmé et validé par le client', icon: CheckCircle2 },
 ];
 
 const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-amber-500',
   confirmed: 'bg-blue-500',
   'in-progress': 'bg-primary',
+  'awaiting-validation': 'bg-violet-500',
   completed: 'bg-secondary',
   cancelled: 'bg-destructive',
 };
@@ -55,6 +60,8 @@ const BookingDetail = () => {
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [showCancelForm, setShowCancelForm] = useState(false);
+  const [showRejectForm, setShowRejectForm] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
 
   const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
   const booking = bookingResponse?.data as Booking | undefined;
@@ -102,6 +109,18 @@ const BookingDetail = () => {
 
   const handleStatusUpdate = async (newStatus: string) => {
     await updateStatus.mutateAsync({ id: booking._id, status: newStatus });
+  };
+
+  const handleClientReject = async () => {
+    // Client rejects → back to in-progress
+    await updateStatus.mutateAsync({ id: booking._id, status: 'in-progress' });
+    setShowRejectForm(false);
+    setRejectReason('');
+  };
+
+  const handleClientValidate = async () => {
+    // Client confirms → completed
+    await updateStatus.mutateAsync({ id: booking._id, status: 'completed' });
   };
 
   const handleSubmitReview = async () => {
@@ -153,7 +172,7 @@ const BookingDetail = () => {
                 Créée le {formatDate(booking.createdAt)}
               </p>
             </div>
-            <Badge className={cn('text-sm px-4 py-1.5 text-white', STATUS_COLORS[booking.status])}>
+            <Badge className={cn('text-sm px-4 py-1.5 text-white', STATUS_COLORS[booking.status] || 'bg-muted')}>
               {isCancelled
                 ? 'Annulée'
                 : STATUS_STEPS.find(s => s.key === booking.status)?.label || booking.status}
@@ -186,7 +205,9 @@ const BookingDetail = () => {
                           className={cn(
                             'w-9 h-9 rounded-full flex items-center justify-center z-10 flex-shrink-0 transition-all',
                             isCompleted
-                              ? 'bg-primary text-primary-foreground'
+                              ? step.key === 'awaiting-validation' && isCurrent
+                                ? 'bg-violet-500 text-white animate-pulse'
+                                : 'bg-primary text-primary-foreground'
                               : 'bg-muted text-muted-foreground'
                           )}
                         >
@@ -312,11 +333,97 @@ const BookingDetail = () => {
                       </Button>
                     )}
                     {booking.status === 'in-progress' && (
-                      <Button variant="hero" onClick={() => handleStatusUpdate('completed')} disabled={updateStatus.isPending}>
-                        Marquer comme terminé
-                      </Button>
+                      <div className="w-full space-y-3">
+                        <div className="p-4 bg-violet-500/10 border border-violet-500/20 rounded-xl">
+                          <p className="text-sm text-muted-foreground mb-2">
+                            En marquant le travail comme terminé, le client devra confirmer que l'intervention est satisfaisante.
+                          </p>
+                          <Button 
+                            className="bg-violet-500 hover:bg-violet-600 text-white"
+                            onClick={() => handleStatusUpdate('awaiting-validation')} 
+                            disabled={updateStatus.isPending}
+                          >
+                            <ShieldCheck className="w-4 h-4 mr-2" />
+                            Soumettre pour validation client
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                    {booking.status === 'awaiting-validation' && (
+                      <div className="p-4 bg-violet-500/10 border border-violet-500/20 rounded-xl w-full">
+                        <div className="flex items-center gap-2 mb-2">
+                          <ShieldCheck className="w-5 h-5 text-violet-500" />
+                          <p className="font-medium text-violet-700 dark:text-violet-300">En attente de validation</p>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Vous avez soumis l'intervention comme terminée. Le client doit confirmer que le travail est satisfaisant.
+                        </p>
+                      </div>
                     )}
                   </div>
+                </div>
+              )}
+
+              {/* Client validation step - awaiting-validation */}
+              {isClient && booking.status === 'awaiting-validation' && !isCancelled && (
+                <div className="bg-card rounded-2xl border-2 border-violet-500/30 p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-violet-500/10 flex items-center justify-center">
+                      <ShieldCheck className="w-5 h-5 text-violet-500" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold">Validation requise</h3>
+                      <p className="text-sm text-muted-foreground">Le prestataire a marqué l'intervention comme terminée</p>
+                    </div>
+                  </div>
+                  
+                  <p className="text-sm text-muted-foreground mb-6">
+                    Vérifiez que le travail a été effectué correctement. Si vous êtes satisfait, confirmez la fin de l'intervention. 
+                    Sinon, le prestataire reprendra le travail.
+                  </p>
+
+                  {!showRejectForm ? (
+                    <div className="flex flex-wrap gap-3">
+                      <Button 
+                        className="bg-secondary hover:bg-secondary/90 text-secondary-foreground gap-2"
+                        onClick={handleClientValidate}
+                        disabled={updateStatus.isPending}
+                      >
+                        <ThumbsUp className="w-4 h-4" />
+                        Confirmer - Travail satisfaisant
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        className="text-destructive border-destructive/30 hover:bg-destructive/10 gap-2"
+                        onClick={() => setShowRejectForm(true)}
+                      >
+                        <ThumbsDown className="w-4 h-4" />
+                        Non satisfait - À reprendre
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-destructive">Pourquoi le travail n'est pas satisfaisant ?</h4>
+                      <Textarea
+                        placeholder="Décrivez ce qui doit être corrigé ou refait..."
+                        value={rejectReason}
+                        onChange={(e) => setRejectReason(e.target.value)}
+                        rows={3}
+                      />
+                      <div className="flex gap-3">
+                        <Button 
+                          variant="destructive" 
+                          onClick={handleClientReject} 
+                          disabled={updateStatus.isPending}
+                        >
+                          Renvoyer en intervention
+                        </Button>
+                        <Button variant="outline" onClick={() => setShowRejectForm(false)}>
+                          Annuler
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -351,13 +458,14 @@ const BookingDetail = () => {
 
               {/* Review Form - Only for completed bookings by client */}
               {isClient && booking.status === 'completed' && !reviewSubmitted && (
-                <div className="bg-card rounded-2xl border border-border p-6">
+                <div className="bg-card rounded-2xl border-2 border-amber-500/30 p-6">
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     <Star className="w-5 h-5 text-amber-500" />
                     Laissez votre avis
                   </h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Votre retour aide les autres utilisateurs et le prestataire à s'améliorer.
+                    Votre retour aide les autres utilisateurs et le prestataire à s'améliorer. 
+                    Cet avis sera visible sur le profil du prestataire.
                   </p>
 
                   {/* Star Rating */}
@@ -409,7 +517,7 @@ const BookingDetail = () => {
                   <CheckCircle2 className="w-12 h-12 text-secondary mx-auto mb-3" />
                   <h3 className="text-lg font-semibold mb-1">Merci pour votre avis !</h3>
                   <p className="text-sm text-muted-foreground">
-                    Votre retour sera visible sur le profil du prestataire.
+                    Votre retour est maintenant visible sur le profil du prestataire.
                   </p>
                 </div>
               )}
