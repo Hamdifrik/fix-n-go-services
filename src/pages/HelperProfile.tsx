@@ -930,7 +930,6 @@ const HelperProfile = () => {
             )}
           </div>
         </div>
-        </div>
       </div>
       </div>
     </div>
