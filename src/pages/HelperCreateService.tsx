@@ -8,7 +8,8 @@ import {
   Check,
   Plus,
   X,
-  Eye
+  Eye,
+  MapPin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import SmartNavbar from '@/components/layout/SmartNavbar';
 import { useCreateService } from '@/hooks/useServices';
 import { ImageUpload } from '@/components/chat/ImageUpload';
+import { LocationPicker } from '@/components/maps/ServiceMap';
 import { cn } from '@/lib/utils';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -44,6 +46,7 @@ interface ServiceFormData {
   duration: number;
   tags: string[];
   images: string[];
+  location: { lat: number; lng: number; address?: string } | null;
 }
 
 const HelperCreateService = () => {
@@ -58,6 +61,7 @@ const HelperCreateService = () => {
     duration: 60,
     tags: [],
     images: [],
+    location: null,
   });
 
   const createService = useCreateService();
