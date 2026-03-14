@@ -477,7 +477,7 @@ const HelperCreateService = () => {
                 </div>
 
                 <div className="flex justify-between">
-                  <Button variant="outline" onClick={() => setStep(3)}>
+                  <Button variant="outline" onClick={() => setStep(4)}>
                     Retour
                   </Button>
                   <Button 
