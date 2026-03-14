@@ -49,6 +49,7 @@ const App = () => (
           <Route path="/helper/profile" element={<HelperProfile />} />
           <Route path="/helper/:id/profile" element={<HelperProfile />} />
           <Route path="/helper/services/new" element={<HelperCreateService />} />
+          <Route path="/helper/services/:id/edit" element={<HelperEditService />} />
           
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
