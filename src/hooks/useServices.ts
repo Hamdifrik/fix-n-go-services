@@ -45,6 +45,7 @@ export const useCreateService = () => {
       duration: number;
       images?: string[];
       tags?: string[];
+      location?: { lat: number; lng: number; address?: string };
     }) => servicesApi.create(serviceData),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-services'] });
