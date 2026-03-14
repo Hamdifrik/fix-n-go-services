@@ -129,7 +129,8 @@ const HelperCreateService = () => {
     { num: 1, label: 'Description' },
     { num: 2, label: 'Tarification' },
     { num: 3, label: 'Photos & Tags' },
-    { num: 4, label: 'Aperçu' },
+    { num: 4, label: 'Localisation' },
+    { num: 5, label: 'Aperçu' },
   ];
 
   return (
