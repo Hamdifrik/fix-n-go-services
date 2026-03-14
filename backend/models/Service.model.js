@@ -57,11 +57,28 @@ const serviceSchema = new mongoose.Schema(
         type: String,
       },
     ],
+    location: {
+      type: {
+        type: String,
+        enum: ["Point"],
+        default: "Point",
+      },
+      coordinates: {
+        type: [Number], // [longitude, latitude]
+        default: undefined,
+      },
+      address: {
+        type: String,
+      },
+    },
   },
   {
     timestamps: true,
   },
 )
+
+// Geospatial index for location queries
+serviceSchema.index({ "location.coordinates": "2dsphere" })
 
 const Service = mongoose.model("Service", serviceSchema)
 

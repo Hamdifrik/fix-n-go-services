@@ -141,7 +141,7 @@ export const updateService = async (req, res) => {
       })
     }
 
-    const allowedUpdates = ["title", "description", "category", "price", "duration", "images", "tags", "isActive"]
+    const allowedUpdates = ["title", "description", "category", "price", "duration", "images", "tags", "isActive", "location"]
 
     Object.keys(req.body).forEach((key) => {
       if (allowedUpdates.includes(key)) {
