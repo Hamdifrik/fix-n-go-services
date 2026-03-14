@@ -377,14 +377,50 @@ const HelperCreateService = () => {
                     Retour
                   </Button>
                   <Button variant="hero" onClick={() => setStep(4)}>
+                    Continuer
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Location */}
+            {step === 4 && (
+              <div className="bg-card rounded-2xl border border-border p-6">
+                <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-primary" />
+                  Localisation du service
+                </h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Indiquez où vous intervenez pour que les clients proches puissent vous trouver facilement.
+                </p>
+                <LocationPicker
+                  value={formData.location}
+                  onChange={(loc) => handleInputChange('location', loc)}
+                />
+                {formData.location && (
+                  <div className="mt-4 p-3 rounded-xl bg-primary/5 border border-primary/20 text-sm">
+                    <p className="font-medium text-primary flex items-center gap-1">
+                      <MapPin className="w-4 h-4" />
+                      Position sélectionnée
+                    </p>
+                    <p className="text-muted-foreground mt-1">
+                      {formData.location.address || `${formData.location.lat.toFixed(4)}, ${formData.location.lng.toFixed(4)}`}
+                    </p>
+                  </div>
+                )}
+                <div className="mt-8 flex justify-between">
+                  <Button variant="outline" onClick={() => setStep(3)}>
+                    Retour
+                  </Button>
+                  <Button variant="hero" onClick={() => setStep(5)}>
                     Aperçu
                   </Button>
                 </div>
               </div>
             )}
 
-            {/* Step 4: Preview */}
-            {step === 4 && (
+            {/* Step 5: Preview */}
+            {step === 5 && (
               <div className="bg-card rounded-2xl border border-border p-6">
                 <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
                   <Eye className="w-5 h-5 text-primary" />
