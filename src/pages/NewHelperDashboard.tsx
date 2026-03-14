@@ -14,7 +14,6 @@ import {
   Plus,
   Star,
   Euro,
-  Eye,
   Clock,
   CheckCircle2,
   XCircle,
@@ -26,6 +25,7 @@ import { useBookings, useUpdateBookingStatus, useCancelBooking } from '@/hooks/u
 import { useUserStats } from '@/hooks/useStats';
 import { useUnreadCount } from '@/hooks/useChat';
 import { Skeleton } from '@/components/ui/skeleton';
+import AuthenticatedNavbar from '@/components/layout/AuthenticatedNavbar';
 
 interface UserData {
   _id: string;
@@ -66,12 +66,11 @@ const NewHelperDashboard = () => {
   const [activeTab, setActiveTab] = useState('services');
   const [user, setUser] = useState<UserData | null>(null);
 
-  // API Calls
   const { data: servicesResponse, isLoading: isLoadingServices } = useMyServices();
   const { data: bookingsResponse, isLoading: isLoadingBookings } = useBookings();
   const { data: statsResponse, isLoading: isLoadingStats } = useUserStats();
   const { data: unreadData } = useUnreadCount();
-  
+
   const updateBookingStatus = useUpdateBookingStatus();
   const cancelBooking = useCancelBooking();
 
@@ -80,6 +79,7 @@ const NewHelperDashboard = () => {
   const stats = statsResponse?.data;
 
   const pendingBookings = bookings.filter((b: any) => b.status === 'pending');
+  const unreadCount = unreadData?.count || 0;
 
   useEffect(() => {
     const userStr = localStorage.getItem('user');
@@ -111,15 +111,17 @@ const NewHelperDashboard = () => {
     return `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase();
   };
 
-  const handleAcceptBooking = async (bookingId: string) => {
+  const handleAcceptBooking = async (e: React.MouseEvent, bookingId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
     await updateBookingStatus.mutateAsync({ id: bookingId, status: 'confirmed' });
   };
 
-  const handleRejectBooking = async (bookingId: string) => {
+  const handleRejectBooking = async (e: React.MouseEvent, bookingId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
     await cancelBooking.mutateAsync({ id: bookingId, reason: 'Refusé par le helper' });
   };
-
-  const unreadCount = unreadData?.count || 0;
 
   const sidebarItems = [
     { id: 'home', icon: Home, label: 'Accueil' },
@@ -157,311 +159,323 @@ const NewHelperDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
-      <aside className="hidden lg:flex flex-col w-64 border-r border-border bg-card">
-        <div className="p-6 border-b border-border">
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-              <Wrench className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold gradient-text">FixIt Pro</span>
-          </Link>
-        </div>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* ✅ Navbar du haut avec Tableau de bord, Explorer, Créer un service, notifications et messagerie */}
+      <AuthenticatedNavbar
+        user={{
+          id: user._id,
+          name: `${user.firstName} ${user.lastName}`,
+          email: user.email,
+          role: user.role,
+        }}
+        onLogout={handleLogout}
+      />
 
-        <nav className="flex-1 p-4">
-          <ul className="space-y-1">
-            {sidebarItems.map((item) => (
-              <li key={item.id}>
-                <button
-                  onClick={() => {
-                    if (item.path) {
-                      navigate(item.path);
-                    } else {
-                      setActiveTab(item.id);
-                    }
-                  }}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all",
-                    activeTab === item.id
-                      ? "bg-primary/10 text-primary font-medium"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
-                >
-                  <item.icon className="w-5 h-5" />
-                  <span className="flex-1">{item.label}</span>
-                  {item.badge !== undefined && item.badge > 0 && (
-                    <span className={cn(
-                      "min-w-5 h-5 px-1 rounded-full text-xs flex items-center justify-center",
-                      item.isUnread 
-                        ? "bg-destructive text-destructive-foreground animate-pulse" 
-                        : item.id === 'bookings' 
-                          ? "bg-warning text-warning-foreground" 
-                          : "bg-primary text-primary-foreground"
-                    )}>
-                      {item.badge}
-                    </span>
-                  )}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
+      {/* Layout sous la navbar fixe */}
+      <div className="flex flex-1 pt-16 md:pt-20">
 
-        <div className="p-4 border-t border-border">
-          <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold">
-              {getUserInitials()}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium truncate">{user.firstName} {user.lastName}</p>
-              <p className="text-sm text-muted-foreground truncate flex items-center gap-1">
-                <Star className="w-3 h-3 text-warning fill-warning" />
-                Helper Pro
-              </p>
-            </div>
-            <button 
-              onClick={handleLogout}
-              className="text-muted-foreground hover:text-destructive transition-colors"
-              title="Se déconnecter"
-            >
-              <LogOut className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col">
-        <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6">
-          <div>
-            <h1 className="text-xl font-semibold">Dashboard Helper</h1>
-            <p className="text-sm text-muted-foreground">Bienvenue, {user.firstName} !</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
-              <Bell className="w-5 h-5 text-muted-foreground" />
-              {pendingBookings.length > 0 && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-destructive" />
-              )}
-            </button>
-            <Link to="/helper/services/new">
-              <Button variant="hero" size="sm" className="gap-2">
-                <Plus className="w-4 h-4" />
-                Nouveau service
-              </Button>
+        {/* ✅ Sidebar gauche — conservée intégralement */}
+        <aside className="hidden lg:flex flex-col w-64 border-r border-border bg-card">
+          <div className="p-6 border-b border-border">
+            <Link to="/" className="flex items-center gap-2">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                <Wrench className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <span className="text-xl font-bold gradient-text">FixIt Pro</span>
             </Link>
           </div>
-        </header>
 
-        <div className="flex-1 overflow-auto p-6">
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {isLoadingStats ? (
-              [...Array(4)].map((_, i) => (
-                <Skeleton key={i} className="h-28 rounded-2xl" />
-              ))
-            ) : (
-              statsData.map((stat, index) => (
-                <div 
-                  key={index}
-                  className="bg-card rounded-2xl p-5 border border-border hover-lift"
-                >
-                  <div className={cn("w-10 h-10 rounded-xl bg-muted flex items-center justify-center mb-3", stat.color)}>
-                    <stat.icon className="w-5 h-5" />
-                  </div>
-                  <p className="text-2xl font-bold">{stat.value}</p>
-                  <p className="text-sm text-muted-foreground">{stat.label}</p>
-                </div>
-              ))
-            )}
-          </div>
+          <nav className="flex-1 p-4">
+            <ul className="space-y-1">
+              {sidebarItems.map((item) => (
+                <li key={item.id}>
+                  <button
+                    onClick={() => {
+                      if (item.path) {
+                        navigate(item.path);
+                      } else {
+                        setActiveTab(item.id);
+                      }
+                    }}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all",
+                      activeTab === item.id
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    )}
+                  >
+                    <item.icon className="w-5 h-5" />
+                    <span className="flex-1">{item.label}</span>
+                    {item.badge !== undefined && item.badge > 0 && (
+                      <span className={cn(
+                        "min-w-5 h-5 px-1 rounded-full text-xs flex items-center justify-center",
+                        item.isUnread
+                          ? "bg-destructive text-destructive-foreground animate-pulse"
+                          : item.id === 'bookings'
+                            ? "bg-warning text-warning-foreground"
+                            : "bg-primary text-primary-foreground"
+                      )}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
 
-          {/* My Services Section */}
-          {(activeTab === 'home' || activeTab === 'services') && (
-            <div className="bg-card rounded-2xl border border-border mb-8">
-              <div className="p-5 border-b border-border flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Package className="w-5 h-5 text-primary" />
-                  <h2 className="text-lg font-semibold">Mes services</h2>
-                </div>
-                <Link to="/helper/services/new" className="text-sm text-primary hover:underline">
-                  + Ajouter un service
-                </Link>
+          <div className="p-4 border-t border-border">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-muted">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold">
+                {getUserInitials()}
               </div>
-              
-              {isLoadingServices ? (
-                <div className="p-5 space-y-4">
-                  {[...Array(3)].map((_, i) => (
-                    <Skeleton key={i} className="h-24" />
-                  ))}
-                </div>
-              ) : myServices.length > 0 ? (
-                <div className="divide-y divide-border">
-                  {myServices.map((service: any) => (
-                    <div 
-                      key={service._id}
-                      className="p-5 hover:bg-muted/30 transition-colors"
-                    >
-                      <div className="flex items-start gap-4">
-                        <img
-                          src={service.images?.[0] || '/placeholder.svg'}
-                          alt={service.title}
-                          className="w-20 h-20 rounded-xl object-cover flex-shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                              {CATEGORY_LABELS[service.category] || service.category}
-                            </span>
-                            <span className="px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-xs font-medium">
-                              {service.price}€
-                            </span>
-                          </div>
-                          <h3 className="font-semibold mb-1">{service.title}</h3>
-                          <p className="text-sm text-muted-foreground line-clamp-1">{service.description}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm">Modifier</Button>
-                          <button className="p-2 rounded-lg hover:bg-muted">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium truncate">{user.firstName} {user.lastName}</p>
+                <p className="text-sm text-muted-foreground truncate flex items-center gap-1">
+                  <Star className="w-3 h-3 text-warning fill-warning" />
+                  Helper Pro
+                </p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="text-muted-foreground hover:text-destructive transition-colors"
+                title="Se déconnecter"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-auto p-6">
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              {isLoadingStats ? (
+                [...Array(4)].map((_, i) => (
+                  <Skeleton key={i} className="h-28 rounded-2xl" />
+                ))
               ) : (
-                <div className="p-12 text-center">
-                  <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="font-semibold mb-2">Aucun service publié</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Créez votre premier service pour commencer à recevoir des réservations
-                  </p>
-                  <Link to="/helper/services/new">
-                    <Button variant="hero">Créer un service</Button>
+                statsData.map((stat, index) => (
+                  <div
+                    key={index}
+                    className="bg-card rounded-2xl p-5 border border-border hover-lift"
+                  >
+                    <div className={cn("w-10 h-10 rounded-xl bg-muted flex items-center justify-center mb-3", stat.color)}>
+                      <stat.icon className="w-5 h-5" />
+                    </div>
+                    <p className="text-2xl font-bold">{stat.value}</p>
+                    <p className="text-sm text-muted-foreground">{stat.label}</p>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* My Services Section */}
+            {(activeTab === 'home' || activeTab === 'services') && (
+              <div className="bg-card rounded-2xl border border-border mb-8">
+                <div className="p-5 border-b border-border flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Package className="w-5 h-5 text-primary" />
+                    <h2 className="text-lg font-semibold">Mes services</h2>
+                  </div>
+                  <Link to="/helper/services/new" className="text-sm text-primary hover:underline">
+                    + Ajouter un service
                   </Link>
                 </div>
-              )}
-            </div>
-          )}
 
-          {/* Bookings Section */}
-          {(activeTab === 'home' || activeTab === 'bookings') && (
-            <div className="bg-card rounded-2xl border border-border">
-              <div className="p-5 border-b border-border flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CalendarIcon className="w-5 h-5 text-primary" />
-                  <h2 className="text-lg font-semibold">Demandes de réservation</h2>
-                  {pendingBookings.length > 0 && (
-                    <span className="px-2 py-0.5 rounded-full bg-warning/10 text-warning text-sm font-medium">
-                      {pendingBookings.length} en attente
-                    </span>
-                  )}
-                </div>
-              </div>
-              
-              {isLoadingBookings ? (
-                <div className="p-5 space-y-4">
-                  {[...Array(3)].map((_, i) => (
-                    <Skeleton key={i} className="h-24" />
-                  ))}
-                </div>
-              ) : bookings.length > 0 ? (
-                <div className="divide-y divide-border">
-                  {bookings.map((booking: any) => {
-                    const service = typeof booking.service === 'string' ? null : booking.service;
-                    const client = typeof booking.client === 'string' ? null : booking.client;
-                    
-                    return (
-                      <Link 
-                        key={booking._id}
-                        to={`/bookings/${booking._id}`}
-                        className="block p-5 hover:bg-muted/30 transition-colors cursor-pointer"
+                {isLoadingServices ? (
+                  <div className="p-5 space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <Skeleton key={i} className="h-24" />
+                    ))}
+                  </div>
+                ) : myServices.length > 0 ? (
+                  <div className="divide-y divide-border">
+                    {myServices.map((service: any) => (
+                      <div
+                        key={service._id}
+                        className="p-5 hover:bg-muted/30 transition-colors"
                       >
-                        <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-4">
+                          <img
+                            src={service.images?.[0] || '/placeholder.svg'}
+                            alt={service.title}
+                            className="w-20 h-20 rounded-xl object-cover flex-shrink-0"
+                          />
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className={cn(
-                                "px-2 py-0.5 rounded-full text-xs font-medium",
-                                getStatusColor(booking.status)
-                              )}>
-                                {BOOKING_STATUS_LABELS[booking.status] || booking.status}
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                                {CATEGORY_LABELS[service.category] || service.category}
+                              </span>
+                              <span className="px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-xs font-medium">
+                                {service.price}€
                               </span>
                             </div>
-                            <h3 className="font-semibold">{service?.title || 'Service'}</h3>
-                            <p className="text-sm text-muted-foreground">
-                              Client: {client ? `${client.firstName} ${client.lastName}` : 'Client'}
-                            </p>
-                            <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                              <span className="flex items-center gap-1">
-                                <CalendarIcon className="w-4 h-4" />
-                                {new Date(booking.scheduledDate).toLocaleDateString('fr-FR')}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <Clock className="w-4 h-4" />
-                                {new Date(booking.scheduledDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            </div>
+                            <h3 className="font-semibold mb-1">{service.title}</h3>
+                            <p className="text-sm text-muted-foreground line-clamp-1">{service.description}</p>
                           </div>
-                          <div className="text-right">
-                            <p className="text-lg font-bold text-secondary">{booking.totalPrice}€</p>
-                            {booking.status === 'pending' && (
-                              <div className="flex gap-2 mt-2">
-                                <Button 
-                                  variant="hero" 
-                                  size="sm" 
-                                  className="gap-1"
-                                  onClick={() => handleAcceptBooking(booking._id)}
-                                  disabled={updateBookingStatus.isPending}
-                                >
-                                  <CheckCircle2 className="w-4 h-4" />
-                                  Accepter
-                                </Button>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm" 
-                                  className="gap-1"
-                                  onClick={() => handleRejectBooking(booking._id)}
-                                  disabled={cancelBooking.isPending}
-                                >
-                                  <XCircle className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            )}
+                          <div className="flex items-center gap-2">
+                            <Button variant="outline" size="sm">Modifier</Button>
+                            <button className="p-2 rounded-lg hover:bg-muted">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="p-12 text-center">
-                  <CalendarIcon className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="font-semibold mb-2">Aucune réservation</h3>
-                  <p className="text-muted-foreground">
-                    Les demandes de réservation apparaîtront ici
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </main>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-12 text-center">
+                    <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="font-semibold mb-2">Aucun service publié</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Créez votre premier service pour commencer à recevoir des réservations
+                    </p>
+                    <Link to="/helper/services/new">
+                      <Button variant="hero">Créer un service</Button>
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
 
-      {/* Mobile Bottom Nav */}
+            {/* Bookings Section */}
+            {(activeTab === 'home' || activeTab === 'bookings') && (
+              <div className="bg-card rounded-2xl border border-border">
+                <div className="p-5 border-b border-border flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CalendarIcon className="w-5 h-5 text-primary" />
+                    <h2 className="text-lg font-semibold">Demandes de réservation</h2>
+                    {pendingBookings.length > 0 && (
+                      <span className="px-2 py-0.5 rounded-full bg-warning/10 text-warning text-sm font-medium">
+                        {pendingBookings.length} en attente
+                      </span>
+                    )}
+                  </div>
+                  <Link to="/helper/services/new">
+                    <Button variant="hero" size="sm" className="gap-2">
+                      <Plus className="w-4 h-4" />
+                      Nouveau service
+                    </Button>
+                  </Link>
+                </div>
+
+                {isLoadingBookings ? (
+                  <div className="p-5 space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <Skeleton key={i} className="h-24" />
+                    ))}
+                  </div>
+                ) : bookings.length > 0 ? (
+                  <div className="divide-y divide-border">
+                    {bookings.map((booking: any) => {
+                      const service = typeof booking.service === 'string' ? null : booking.service;
+                      const client = typeof booking.client === 'string' ? null : booking.client;
+
+                      return (
+                        <Link
+                          key={booking._id}
+                          to={`/bookings/${booking._id}`}
+                          className="block p-5 hover:bg-muted/30 transition-colors cursor-pointer"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className={cn(
+                                  "px-2 py-0.5 rounded-full text-xs font-medium",
+                                  getStatusColor(booking.status)
+                                )}>
+                                  {BOOKING_STATUS_LABELS[booking.status] || booking.status}
+                                </span>
+                              </div>
+                              <h3 className="font-semibold">{service?.title || 'Service'}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                Client: {client ? `${client.firstName} ${client.lastName}` : 'Client'}
+                              </p>
+                              <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <CalendarIcon className="w-4 h-4" />
+                                  {new Date(booking.scheduledDate).toLocaleDateString('fr-FR')}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Clock className="w-4 h-4" />
+                                  {new Date(booking.scheduledDate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-secondary">{booking.totalPrice}€</p>
+                              {booking.status === 'pending' && (
+                                <div className="flex gap-2 mt-2">
+                                  <Button
+                                    variant="hero"
+                                    size="sm"
+                                    className="gap-1"
+                                    onClick={(e) => handleAcceptBooking(e, booking._id)}
+                                    disabled={updateBookingStatus.isPending}
+                                  >
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    Accepter
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="gap-1"
+                                    onClick={(e) => handleRejectBooking(e, booking._id)}
+                                    disabled={cancelBooking.isPending}
+                                  >
+                                    <XCircle className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-12 text-center">
+                    <CalendarIcon className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="font-semibold mb-2">Aucune réservation</h3>
+                    <p className="text-muted-foreground">
+                      Les demandes de réservation apparaîtront ici
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+
+      {/* ✅ Mobile Bottom Nav — conservée intégralement */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border flex justify-around py-2 px-4 z-50">
         {sidebarItems.slice(0, 5).map((item) => (
           <button
             key={item.id}
-            onClick={() => setActiveTab(item.id)}
+            onClick={() => {
+              if (item.path) {
+                navigate(item.path);
+              } else {
+                setActiveTab(item.id);
+              }
+            }}
             className={cn(
-              "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors",
+              "flex flex-col items-center gap-1 p-2 rounded-lg transition-colors relative",
               activeTab === item.id ? "text-primary" : "text-muted-foreground"
             )}
           >
             <item.icon className="w-5 h-5" />
-            <span className="text-xs">{item.label}</span>
+            <span className="text-xs">{item.label.split(' ')[0]}</span>
+            {item.badge !== undefined && item.badge > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center">
+                {item.badge}
+              </span>
+            )}
           </button>
         ))}
       </nav>

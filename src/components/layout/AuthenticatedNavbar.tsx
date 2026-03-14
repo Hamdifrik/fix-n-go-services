@@ -45,7 +45,7 @@ const AuthenticatedNavbar = ({ user, onLogout }: AuthenticatedNavbarProps) => {
   const navLinks = user.role === 'helper' 
     ? [
         { href: '/helper/dashboard', label: 'Tableau de bord' },
-        { href: '/services', label: 'Explorer' },
+        { href: '/services', label: 'Explorers' },
         { href: '/helper/services/new', label: 'Créer un service' },
       ]
     : [
