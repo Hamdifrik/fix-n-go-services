@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Bell, MessageCircle, Check, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Bell, MessageCircle, Check, Trash2, Calendar, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -21,6 +22,7 @@ import { fr } from 'date-fns/locale';
 
 const NotificationBell = () => {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   const { unreadMessages } = useSocket();
   const { data: notificationsResponse, isLoading } = useNotifications({ limit: 10 });
   const markAsRead = useMarkNotificationAsRead();
@@ -31,28 +33,59 @@ const NotificationBell = () => {
   const notifications = Array.isArray(notificationsResponse?.data) 
     ? notificationsResponse.data 
     : notificationsResponse?.data?.notifications || [];
-  const unreadCount = (notifications.filter((n: any) => !n.read).length || 0) + unreadMessages;
+  const unreadCount = (notifications.filter((n: any) => !n.read && !n.isRead).length || 0) + unreadMessages;
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case 'message':
         return <MessageCircle className="w-4 h-4 text-primary" />;
       case 'booking':
-        return <Bell className="w-4 h-4 text-secondary" />;
+        return <Calendar className="w-4 h-4 text-secondary" />;
+      case 'review':
+        return <Star className="w-4 h-4 text-warning" />;
       default:
         return <Bell className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
-  const handleMarkAsRead = (id: string) => {
-    markAsRead.mutate(id);
+  const getNotificationRoute = (notification: any): string | null => {
+    const type = notification.type;
+    const relatedId = notification.relatedId;
+
+    switch (type) {
+      case 'booking':
+        return relatedId ? `/bookings/${relatedId}` : null;
+      case 'message':
+        return '/messages';
+      case 'review':
+        return relatedId ? `/bookings/${relatedId}` : null;
+      case 'payment':
+        return relatedId ? `/bookings/${relatedId}` : null;
+      default:
+        return null;
+    }
+  };
+
+  const handleNotificationClick = (notification: any) => {
+    // Mark as read
+    if (!notification.read && !notification.isRead) {
+      markAsRead.mutate(notification._id);
+    }
+
+    // Navigate to source
+    const route = getNotificationRoute(notification);
+    if (route) {
+      setOpen(false);
+      navigate(route);
+    }
   };
 
   const handleMarkAllAsRead = () => {
     markAllAsRead.mutate();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
     deleteNotification.mutate(id);
   };
 
@@ -98,50 +131,52 @@ const NotificationBell = () => {
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {notifications.map((notification: any) => (
-                <div
-                  key={notification._id}
-                  className={cn(
-                    "p-4 hover:bg-muted/50 transition-colors cursor-pointer",
-                    !notification.read && "bg-primary/5"
-                  )}
-                  onClick={() => !notification.read && handleMarkAsRead(notification._id)}
-                >
-                  <div className="flex gap-3">
-                    <div className="flex-shrink-0 mt-1">
-                      {getNotificationIcon(notification.type)}
+              {notifications.map((notification: any) => {
+                const isRead = notification.read || notification.isRead;
+                const hasRoute = !!getNotificationRoute(notification);
+                return (
+                  <div
+                    key={notification._id}
+                    className={cn(
+                      "p-4 hover:bg-muted/50 transition-colors",
+                      hasRoute && "cursor-pointer",
+                      !isRead && "bg-primary/5"
+                    )}
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    <div className="flex gap-3">
+                      <div className="flex-shrink-0 mt-1">
+                        {getNotificationIcon(notification.type)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={cn(
+                          "text-sm",
+                          !isRead && "font-medium"
+                        )}>
+                          {notification.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          {notification.message}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {formatDistanceToNow(new Date(notification.createdAt), {
+                            addSuffix: true,
+                            locale: fr,
+                          })}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 flex-shrink-0 opacity-50 hover:opacity-100"
+                        onClick={(e) => handleDelete(e, notification._id)}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={cn(
-                        "text-sm",
-                        !notification.read && "font-medium"
-                      )}>
-                        {notification.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {formatDistanceToNow(new Date(notification.createdAt), {
-                          addSuffix: true,
-                          locale: fr,
-                        })}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(notification._id);
-                      }}
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </ScrollArea>

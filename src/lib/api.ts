@@ -226,6 +226,7 @@ export const servicesApi = {
     duration: number;
     images?: string[];
     tags?: string[];
+    location?: { lat: number; lng: number; address?: string };
   }) => {
     return apiRequest<Service>('/services', {
       method: 'POST',

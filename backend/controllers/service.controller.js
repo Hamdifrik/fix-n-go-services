@@ -3,9 +3,9 @@ import Service from "../models/Service.model.js"
 // Create new service
 export const createService = async (req, res) => {
   try {
-    const { title, description, category, price, duration, images, tags } = req.body
+    const { title, description, category, price, duration, images, tags, location } = req.body
 
-    const service = new Service({
+    const serviceData = {
       title,
       description,
       category,
@@ -14,7 +14,18 @@ export const createService = async (req, res) => {
       helper: req.userId,
       images,
       tags,
-    })
+    }
+
+    // Add location if provided
+    if (location && location.lat !== undefined && location.lng !== undefined) {
+      serviceData.location = {
+        type: "Point",
+        coordinates: [location.lng, location.lat],
+        address: location.address || "",
+      }
+    }
+
+    const service = new Service(serviceData)
 
     await service.save()
 
@@ -67,6 +78,7 @@ export const getServices = async (req, res) => {
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .sort({ createdAt: -1 })
+      .lean()
 
     const count = await Service.countDocuments(query)
 
@@ -129,7 +141,7 @@ export const updateService = async (req, res) => {
       })
     }
 
-    const allowedUpdates = ["title", "description", "category", "price", "duration", "images", "tags", "isActive"]
+    const allowedUpdates = ["title", "description", "category", "price", "duration", "images", "tags", "isActive", "location"]
 
     Object.keys(req.body).forEach((key) => {
       if (allowedUpdates.includes(key)) {

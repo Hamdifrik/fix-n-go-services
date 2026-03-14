@@ -318,7 +318,9 @@ const NewHelperDashboard = () => {
                             <p className="text-sm text-muted-foreground line-clamp-1">{service.description}</p>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm">Modifier</Button>
+                            <Link to={`/helper/services/${service._id}/edit`}>
+                              <Button variant="outline" size="sm">Modifier</Button>
+                            </Link>
                             <button className="p-2 rounded-lg hover:bg-muted">
                               <MoreHorizontal className="w-4 h-4" />
                             </button>
