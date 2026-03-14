@@ -15,6 +15,7 @@ import Services from "./pages/Services";
 import ServiceDetail from "./pages/ServiceDetail";
 import BookService from "./pages/BookService";
 import HelperCreateService from "./pages/HelperCreateService";
+import HelperEditService from "./pages/HelperEditService";
 import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 import BookingDetail from "./pages/BookingDetail";
