@@ -109,7 +109,7 @@ const HelperCreateService = () => {
   const isStep2Valid = formData.price > 0 && formData.duration > 0;
 
   const handleSubmit = async () => {
-    await createService.mutateAsync({
+    const submitData: any = {
       title: formData.title,
       description: formData.description,
       category: formData.category,
@@ -117,8 +117,11 @@ const HelperCreateService = () => {
       duration: formData.duration,
       images: formData.images,
       tags: formData.tags,
-    });
-
+    };
+    if (formData.location) {
+      submitData.location = formData.location;
+    }
+    await createService.mutateAsync(submitData);
     navigate('/helper/dashboard');
   };
 
