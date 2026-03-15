@@ -19,6 +19,15 @@ import HelperEditService from "./pages/HelperEditService";
 import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
 import BookingDetail from "./pages/BookingDetail";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import HowItWorks from "./pages/HowItWorks";
+import BecomeHelper from "./pages/BecomeHelper";
+import Legal from "./pages/Legal";
+import Cookies from "./pages/Cookies";
+import Blog from "./pages/Blog";
+import Careers from "./pages/Careers";
+import CategoryServices from "./pages/CategoryServices";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +45,15 @@ const App = () => (
           <Route path="/register" element={<Register />} />
           <Route path="/services" element={<Services />} />
           <Route path="/services/:id" element={<ServiceDetail />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/helpers" element={<BecomeHelper />} />
+          <Route path="/legal" element={<Legal />} />
+          <Route path="/cookies" element={<Cookies />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/careers" element={<Careers />} />
+          <Route path="/services/category/:category" element={<CategoryServices />} />
           
           {/* Client Routes */}
           <Route path="/dashboard" element={<ClientDashboard />} />
