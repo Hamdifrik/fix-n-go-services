@@ -91,7 +91,7 @@ const ServicesSection = () => {
           {services.map((service, index) => (
             <Link
               key={service.type}
-              to={`/services/${service.type}`}
+              to={`/services/category/${service.type}`}
               className="group relative bg-card rounded-2xl p-6 hover-lift border border-border/50 overflow-hidden"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
