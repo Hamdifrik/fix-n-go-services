@@ -15,10 +15,10 @@ const Footer = () => {
 
   const footerLinks = {
     services: [
-      { label: 'Plomberie', href: '/services/plomberie' },
-      { label: 'Électricité', href: '/services/electricite' },
-      { label: 'Serrurerie', href: '/services/serrurerie' },
-      { label: 'Chauffage', href: '/services/chauffage' },
+      { label: 'Plomberie', href: '/services/category/plomberie' },
+      { label: 'Électricité', href: '/services/category/electricite' },
+      { label: 'Serrurerie', href: '/services/category/serrurerie' },
+      { label: 'Chauffage', href: '/services/category/chauffage' },
       { label: 'Tous les services', href: '/services' },
     ],
     company: [
