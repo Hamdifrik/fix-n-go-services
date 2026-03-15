@@ -26,7 +26,7 @@ const Legal = () => {
           <section>
             <h2 className="text-2xl font-semibold mb-4">Hébergeur</h2>
             <div className="bg-card rounded-xl p-6 border border-border space-y-2 text-muted-foreground">
-              <p><strong className="text-foreground">Nom :</strong> Lovable / Vercel</p>
+              <p><strong className="text-foreground">Nom :</strong> AWS </p>
               <p><strong className="text-foreground">Adresse :</strong> San Francisco, USA</p>
             </div>
           </section>
