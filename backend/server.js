@@ -36,6 +36,7 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:8080",
   "http://localhost:3000", 
+  "https://fix-n-go-services.vercel.app", 
   process.env.FRONTEND_URL
 ].filter(Boolean) // Enlève les valeurs undefined
 
