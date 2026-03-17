@@ -26,6 +26,7 @@ import BecomeHelper from "./pages/BecomeHelper";
 import Legal from "./pages/Legal";
 import Cookies from "./pages/Cookies";
 import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 import Careers from "./pages/Careers";
 import CategoryServices from "./pages/CategoryServices";
 
@@ -52,6 +53,7 @@ const App = () => (
           <Route path="/legal" element={<Legal />} />
           <Route path="/cookies" element={<Cookies />} />
           <Route path="/blog" element={<Blog />} />
+          <Route path="/blog/:slug" element={<BlogPost />} />
           <Route path="/careers" element={<Careers />} />
           <Route path="/services/category/:category" element={<CategoryServices />} />
           

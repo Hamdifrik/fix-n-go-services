@@ -28,6 +28,7 @@ import Footer from '@/components/layout/Footer';
 import { useBooking, useUpdateBookingStatus, useCancelBooking } from '@/hooks/useBookings';
 import { useCreateReview } from '@/hooks/useReviews';
 import { Booking, User as UserType, Service } from '@/lib/api';
+import { ServiceMap } from '@/components/maps/ServiceMap';
 
 const STATUS_STEPS = [
   { key: 'pending', label: 'En attente', description: 'La réservation a été envoyée au prestataire', icon: Clock },
@@ -312,7 +313,32 @@ const BookingDetail = () => {
                 )}
               </div>
 
-              {/* Actions for Helper */}
+              {/* Service Location Map */}
+              {service?.location?.coordinates && service.location.coordinates.length === 2 && (
+                <div className="bg-card rounded-2xl border border-border p-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-primary" />
+                    Localisation du service
+                  </h3>
+                  {service.location.address && (
+                    <p className="text-sm text-muted-foreground mb-3">{service.location.address}</p>
+                  )}
+                  <ServiceMap
+                    services={[{
+                      id: service._id,
+                      title: service.title,
+                      price: service.price,
+                      category: service.category,
+                      lat: service.location.coordinates[1],
+                      lng: service.location.coordinates[0],
+                      helperName: helper ? `${helper.firstName} ${helper.lastName}` : 'Helper',
+                    }]}
+                    clientLocation={null}
+                    className="h-[300px] rounded-xl overflow-hidden"
+                  />
+                </div>
+              )}
+
               {isHelper && !isCancelled && (
                 <div className="bg-card rounded-2xl border border-border p-6">
                   <h3 className="text-lg font-semibold mb-4">Actions</h3>

@@ -40,6 +40,11 @@ export interface Service {
   images: string[];
   tags: string[];
   isActive: boolean;
+  location?: {
+    type?: string;
+    coordinates?: number[];
+    address?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
