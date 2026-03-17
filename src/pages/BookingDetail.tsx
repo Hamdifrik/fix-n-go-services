@@ -28,6 +28,7 @@ import Footer from '@/components/layout/Footer';
 import { useBooking, useUpdateBookingStatus, useCancelBooking } from '@/hooks/useBookings';
 import { useCreateReview } from '@/hooks/useReviews';
 import { Booking, User as UserType, Service } from '@/lib/api';
+import { ServiceMap } from '@/components/maps/ServiceMap';
 
 const STATUS_STEPS = [
   { key: 'pending', label: 'En attente', description: 'La réservation a été envoyée au prestataire', icon: Clock },
