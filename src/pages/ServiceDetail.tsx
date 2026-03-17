@@ -10,7 +10,8 @@ import {
   Calendar,
   Shield,
   ThumbsUp,
-  Share2
+  Share2,
+  Navigation
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -19,6 +20,7 @@ import Footer from '@/components/layout/Footer';
 import { useService } from '@/hooks/useServices';
 import { useHelperReviews } from '@/hooks/useReviews';
 import ChatWindow from '@/components/chat/ChatWindow';
+import { ServiceMap, useClientLocation } from '@/components/maps/ServiceMap';
 import { cn } from '@/lib/utils';
 
 const CATEGORY_LABELS: Record<string, string> = {
