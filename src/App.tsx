@@ -26,6 +26,7 @@ import BecomeHelper from "./pages/BecomeHelper";
 import Legal from "./pages/Legal";
 import Cookies from "./pages/Cookies";
 import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
 import Careers from "./pages/Careers";
 import CategoryServices from "./pages/CategoryServices";
 
