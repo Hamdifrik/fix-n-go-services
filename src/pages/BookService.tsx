@@ -472,6 +472,29 @@ const BookService = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Service Location */}
+              {service.location?.coordinates && service.location.coordinates.length === 2 && (
+                <div className="sticky top-[calc(24rem+2rem)] bg-card rounded-2xl border border-border p-5 mt-4">
+                  <h3 className="font-semibold mb-3 flex items-center gap-2 text-sm">
+                    <MapPin className="w-4 h-4 text-primary" />
+                    Localisation du prestataire
+                  </h3>
+                  <ServiceMap
+                    services={[{
+                      id: service._id,
+                      title: service.title,
+                      price: service.price,
+                      category: service.category,
+                      lat: service.location.coordinates[1],
+                      lng: service.location.coordinates[0],
+                      helperName: helper ? `${helper.firstName} ${helper.lastName}` : 'Helper',
+                    }]}
+                    clientLocation={null}
+                    className="h-[200px] rounded-xl overflow-hidden"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
