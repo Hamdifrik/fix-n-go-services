@@ -327,6 +327,32 @@ const ServiceDetail = () => {
                   </div>
                 )}
               </div>
+
+              {/* Location Map */}
+              {service.location?.coordinates && service.location.coordinates.length === 2 && (
+                <div className="bg-card rounded-2xl border border-border p-6">
+                  <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-primary" />
+                    Localisation du service
+                  </h2>
+                  {service.location.address && (
+                    <p className="text-sm text-muted-foreground mb-4">{service.location.address}</p>
+                  )}
+                  <ServiceMap
+                    services={[{
+                      id: service._id,
+                      title: service.title,
+                      price: service.price,
+                      category: service.category,
+                      lat: service.location.coordinates[1],
+                      lng: service.location.coordinates[0],
+                      helperName: helper ? `${helper.firstName} ${helper.lastName}` : 'Helper',
+                    }]}
+                    clientLocation={null}
+                    className="h-[350px] rounded-xl overflow-hidden"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Sidebar - Booking Card */}
