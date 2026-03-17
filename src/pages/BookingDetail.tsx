@@ -31,7 +31,7 @@ import { Booking, User as UserType, Service } from '@/lib/api';
 
 const STATUS_STEPS = [
   { key: 'pending', label: 'En attente', description: 'La réservation a été envoyée au prestataire', icon: Clock },
-  { key: 'confirmed', label: 'Confirmée', description: 'Le prestataire a accepté votre demande', icon: CheckCircle2 },
+  { key: 'confirmed', label: 'Confirmée', description: 'Le prestataire a accepté la demande', icon: CheckCircle2 },
   { key: 'in-progress', label: 'En cours', description: "L'intervention est en cours", icon: Wrench },
   { key: 'awaiting-validation', label: 'Validation client', description: 'Le helper a terminé, en attente de confirmation du client', icon: ShieldCheck },
   { key: 'completed', label: 'Terminée', description: 'Le travail a été confirmé et validé par le client', icon: CheckCircle2 },
