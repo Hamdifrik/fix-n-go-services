@@ -1,37 +1,72 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { 
   Search, 
   MapPin, 
-  Zap, 
   Shield, 
   Clock,
   ArrowRight,
   Sparkles,
   Star,
-  CheckCircle2,
   Users
 } from 'lucide-react';
 import { SERVICE_LABELS, ServiceType } from '@/types';
+import { searchCities } from '@/data/frenchCities';
+import heroBg from '@/assets/hero-bg.jpg';
 
 const HeroSection = () => {
   const navigate = useNavigate();
   const [selectedService, setSelectedService] = useState<ServiceType | ''>('');
   const [location, setLocation] = useState('');
+  const [citySuggestions, setCitySuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const locationRef = useRef<HTMLDivElement>(null);
 
   const popularServices: ServiceType[] = ['plomberie', 'electricite', 'serrurerie', 'chauffage'];
 
+  // Close suggestions on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (locationRef.current && !locationRef.current.contains(e.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleLocationChange = (value: string) => {
+    setLocation(value);
+    const results = searchCities(value);
+    setCitySuggestions(results);
+    setShowSuggestions(results.length > 0);
+  };
+
+  const selectCity = (city: string) => {
+    setLocation(city);
+    setShowSuggestions(false);
+  };
+
   const handleSearch = () => {
-    navigate('/register?role=client');
+    const params = new URLSearchParams();
+    if (selectedService) params.set('category', selectedService);
+    if (location) params.set('city', location);
+    navigate(`/services${params.toString() ? `?${params.toString()}` : ''}`);
   };
 
   return (
     <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
-      {/* Background Elements */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/5" />
-      <div className="absolute top-20 right-10 w-72 h-72 bg-primary/10 rounded-full blur-3xl animate-pulse-slow" />
-      <div className="absolute bottom-20 left-10 w-96 h-96 bg-secondary/10 rounded-full blur-3xl animate-pulse-slow" />
+      {/* Background Image with Overlay */}
+      <div className="absolute inset-0">
+        <img 
+          src={heroBg} 
+          alt="Professionnel en intervention" 
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/95 via-background/85 to-background/70" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/50" />
+      </div>
       
       {/* Grid Pattern */}
       <div className="absolute inset-0 opacity-[0.02]" 
@@ -43,7 +78,7 @@ const HeroSection = () => {
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6 animate-fade-in">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6 animate-fade-in backdrop-blur-sm">
             <Sparkles className="w-4 h-4" />
             <span>La plateforme n°1 du dépannage en France</span>
           </div>
@@ -62,7 +97,7 @@ const HeroSection = () => {
           </p>
 
           {/* Barre de recherche */}
-          <div className="bg-card rounded-2xl shadow-card p-3 md:p-4 max-w-3xl mx-auto animate-scale-in" style={{ animationDelay: '0.3s' }}>
+          <div className="bg-card/95 backdrop-blur-md rounded-2xl shadow-card p-3 md:p-4 max-w-3xl mx-auto animate-scale-in border border-border/50" style={{ animationDelay: '0.3s' }}>
             <div className="flex flex-col md:flex-row gap-3">
               {/* Sélection du service */}
               <div className="flex-1 relative">
@@ -79,16 +114,32 @@ const HeroSection = () => {
                 </select>
               </div>
 
-              {/* Localisation */}
-              <div className="flex-1 relative">
-                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              {/* Localisation avec autocomplétion */}
+              <div className="flex-1 relative" ref={locationRef}>
+                <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
                 <input
                   type="text"
-                  placeholder="Votre ville ou code postal"
+                  placeholder="Votre ville"
                   value={location}
-                  onChange={(e) => setLocation(e.target.value)}
+                  onChange={(e) => handleLocationChange(e.target.value)}
+                  onFocus={() => { if (citySuggestions.length > 0) setShowSuggestions(true); }}
                   className="w-full pl-12 pr-4 py-3 md:py-4 rounded-xl bg-muted/50 border-0 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary/20 transition-all"
                 />
+                {/* City Suggestions Dropdown */}
+                {showSuggestions && citySuggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-xl shadow-lg z-50 overflow-hidden">
+                    {citySuggestions.map((city) => (
+                      <button
+                        key={city}
+                        onClick={() => selectCity(city)}
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/50 transition-colors text-sm"
+                      >
+                        <MapPin className="w-4 h-4 text-primary flex-shrink-0" />
+                        <span>{city}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Bouton recherche */}

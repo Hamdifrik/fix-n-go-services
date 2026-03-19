@@ -65,7 +65,7 @@ export const createReview = async (req, res) => {
       type: "review",
       title: "New Review Received",
       message: `You received a ${rating}-star review`,
-      relatedId: review._id,
+      relatedId: booking._id,
     })
 
     res.status(201).json({
