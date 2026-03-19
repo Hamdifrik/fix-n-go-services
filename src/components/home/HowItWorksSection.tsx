@@ -1,10 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { 
-  FileText, 
+  Search, 
+  MapPin, 
   Users, 
-  MessageSquare, 
-  CheckCircle2,
+  CreditCard,
   ArrowRight
 } from 'lucide-react';
 
@@ -12,30 +12,30 @@ const HowItWorksSection = () => {
   const steps = [
     {
       number: '01',
-      icon: FileText,
-      title: 'Décrivez votre besoin',
-      description: 'Créez une demande en décrivant votre problème avec photos et localisation. C\'est gratuit et sans engagement.',
+      icon: Search,
+      title: 'Recherchez un service',
+      description: 'Choisissez le type de service dont vous avez besoin (plomberie, électricité, etc.) et indiquez votre ville pour trouver les Helpers proches.',
       color: 'from-primary to-blue-400',
     },
     {
       number: '02',
-      icon: Users,
-      title: 'Recevez des propositions',
-      description: 'Les Helpers qualifiés proches de chez vous reçoivent votre demande et vous envoient leurs devis.',
+      icon: MapPin,
+      title: 'Comparez les Helpers',
+      description: 'Consultez les profils, avis, tarifs et la distance des Helpers disponibles dans votre zone. Visualisez-les sur la carte.',
       color: 'from-blue-400 to-secondary',
     },
     {
       number: '03',
-      icon: MessageSquare,
-      title: 'Choisissez votre Helper',
-      description: 'Comparez les profils, avis et tarifs. Échangez par chat pour affiner les détails de l\'intervention.',
+      icon: Users,
+      title: 'Choisissez et réservez',
+      description: 'Sélectionnez le Helper qui vous convient, échangez par chat pour préciser les détails, puis réservez en ligne.',
       color: 'from-secondary to-green-400',
     },
     {
       number: '04',
-      icon: CheckCircle2,
-      title: 'Validez et payez en sécurité',
-      description: 'Le paiement est bloqué jusqu\'à validation du travail. Notez votre Helper après l\'intervention.',
+      icon: CreditCard,
+      title: 'Payez en toute sécurité',
+      description: 'Le paiement est bloqué jusqu\'à validation du travail effectué. Notez votre Helper après l\'intervention.',
       color: 'from-green-400 to-emerald-500',
     },
   ];
@@ -95,9 +95,9 @@ const HowItWorksSection = () => {
 
         {/* CTA */}
         <div className="text-center mt-16">
-          <Link to="/register">
+          <Link to="/services">
             <Button variant="hero" size="xl">
-              Commencer maintenant
+              Rechercher un service
               <ArrowRight className="w-5 h-5" />
             </Button>
           </Link>
