@@ -71,7 +71,7 @@ export const getBookings = async (req, res) => {
     const bookings = await Booking.find(query)
       .populate("client", "firstName lastName email phone")
       .populate("helper", "firstName lastName email phone avatar")
-      .populate("service", "title category price")
+      .populate("service", "title category price images location")
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .sort({ createdAt: -1 })
