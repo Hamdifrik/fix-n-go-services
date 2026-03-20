@@ -252,7 +252,7 @@ const HeroSection = () => {
 
           <p className="text-base md:text-lg text-white/90 mb-10 max-w-xl leading-relaxed" style={{ textShadow: '0 1px 12px rgba(0,0,0,0.5)' }}>
             Des <strong className="text-white font-semibold">Helpers certifiés</strong> près de chez vous,
-            disponibles <strong className="text-white font-semibold">7j/7</strong>.
+            disponibles <strong className="text-white font-semibold">7 jours/7</strong>.
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/25 text-white text-xs font-medium mb-7">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
             La plateforme n°1 du dépannage en France
